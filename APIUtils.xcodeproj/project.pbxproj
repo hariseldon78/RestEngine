@@ -380,7 +380,7 @@
 		FB14D32C1D08497C00F09DE1 /* tests */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CARTHAGE_DIR = "$(PROJECT_DIR)/../Municipium/Carthage";
+				CARTHAGE_DIR = "$(PROJECT_DIR)/../Municipium-App-iOS/Municipium/Carthage";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				DEFINES_MODULE = YES;
@@ -521,7 +521,7 @@
 		FB5CE98E1BF3F99500ACD6CF /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CARTHAGE_DIR = "$(PROJECT_DIR)/../Municipium/Carthage";
+				CARTHAGE_DIR = "$(PROJECT_DIR)/../Municipium-App-iOS/Municipium/Carthage";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				DEFINES_MODULE = YES;
@@ -545,7 +545,7 @@
 		FB5CE98F1BF3F99500ACD6CF /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CARTHAGE_DIR = "$(PROJECT_DIR)/../Municipium/Carthage";
+				CARTHAGE_DIR = "$(PROJECT_DIR)/../Municipium-App-iOS/Municipium/Carthage";
 				CODE_SIGN_IDENTITY = "iPhone Distribution";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
 				DEFINES_MODULE = YES;
@@ -641,7 +641,7 @@
 		FBAC87E81D10A76600C1ADEE /* testsDebug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CARTHAGE_DIR = "$(PROJECT_DIR)/../Municipium/Carthage";
+				CARTHAGE_DIR = "$(PROJECT_DIR)/../Municipium-App-iOS/Municipium/Carthage";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				DEFINES_MODULE = YES;
@@ -727,7 +727,7 @@
 		FBFD8DF71DE691D10032CE31 /* impersonation */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CARTHAGE_DIR = "$(PROJECT_DIR)/../Municipium/Carthage";
+				CARTHAGE_DIR = "$(PROJECT_DIR)/../Municipium-App-iOS/Municipium/Carthage";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				DEFINES_MODULE = YES;
