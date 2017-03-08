@@ -13,6 +13,7 @@ import Alamofire
 import Curry
 import Runes
 import RxSwift
+import Cartography
 
 /////////////////////
 ////////////////////////
@@ -57,20 +58,42 @@ public protocol ArrayApi:RestApi {
 	associatedtype Out:Arrayable
 }
 extension RestApi {
-	func makeRequest(debugCallId:Int)->Result<DataRequest>
+	func makeRequest(debugCallId:Int)->(Result<DataRequest>,UIProgressView?)
 	{
+
 		var jsonDict:[String : ApiParam]?=nil
 		if !flags.contains(.emptyBody) && method != HTTPMethod.get {
 			guard let dict=input.encode().JSONObject() as? [String:Any] else {
-				return .failure(NSError(domain: "no dictionary in request", code: 0, userInfo: nil))
+				return (.failure(NSError(domain: "no dictionary in request", code: 0, userInfo: nil)),nil)
 			}
 			jsonDict=dict.typeConstrain()
 		}
-		let start=Date()
 		let req=MunicipiumAPIAlamofire
 			.request(url, method: method, parameters: jsonDict, encoding: encoding, headers: nil)
 			.debugLog(debugCallId:debugCallId, debugLevel:debugLevel,logTags:logTags, params:jsonDict)
-		return .success(req)
+		let success = Result<DataRequest>.success(req)
+		var progressView:UIProgressView?=nil
+		if let v=self.view, success.isSuccess {
+			progressView=UIProgressView(progressViewStyle: .default)
+			progressView?.tintColor = .purple
+			onMain{
+				v.addSubview(progressView!)
+				constrain(progressView!) {
+					let sv=$0.superview!
+					$0.top == sv.top
+					$0.trailing == sv.trailing
+					$0.leading == sv.leading
+				}
+				progressView!.setContentCompressionResistancePriority(1000, for: UILayoutConstraintAxis.vertical)
+			}
+			req.downloadProgress { (progress) in
+				progressView!.setProgress(
+					Float(progress.fractionCompleted),
+					animated: true)
+			}
+		}
+		
+		return (success,progressView)
 	}
 }
 public extension ObjApi {
@@ -81,10 +104,8 @@ public extension ObjApi {
 		nextCallId+=1
 		
 		return Observable.create{ (observer) -> Disposable in
-			let actInd=self.view?.activityHandler(style: self.activityHandlerStyle)
-			let actBar=UIApplication.shared.activityHandler(style: self.activityHandlerStyle)
 			let start=Date()
-			let request=self.makeRequest(debugCallId:debugCallId)
+			let (request,progressView)=self.makeRequest(debugCallId:debugCallId)
 			guard let req=request.value else {
 				observer.onError(request.error!)
 				return Disposables.create()
@@ -92,8 +113,7 @@ public extension ObjApi {
 
 			req.responseJSON { response in
 				defer {
-					actInd?.hide()
-					actBar.hide()
+					progressView?.removeFromSuperview()
 					log("[\(debugCallId)]call duration: \(Date().timeIntervalSince(start))",self.logTags,.verbose)
 				}
 				guard let j = response.result.value else {
@@ -137,10 +157,8 @@ public extension ArrayApi {
 		nextCallId+=1
 		
 		return Observable.create{ (observer) -> Disposable in
-			let actInd=self.view?.activityHandler(style: self.activityHandlerStyle)
-			let actBar=UIApplication.shared.activityHandler(style: self.activityHandlerStyle)
 			let start=Date()
-			let request=self.makeRequest(debugCallId:debugCallId)
+			let (request,progressView)=self.makeRequest(debugCallId:debugCallId)
 			guard let req=request.value else {
 				observer.onError(request.error!)
 				return Disposables.create()
@@ -148,8 +166,7 @@ public extension ArrayApi {
 			
 			req.responseJSON { response in
 				defer {
-					actInd?.hide()
-					actBar.hide()
+					progressView?.removeFromSuperview()
 					log("[\(debugCallId)]call duration: \(Date().timeIntervalSince(start))",self.logTags,.verbose)
 				}
 				log("timeline: \(response.timeline)",self.logTags,.verbose)

@@ -66,6 +66,7 @@
 		FB7719A51E3040B300C4CB2D /* Curry.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Curry.framework; path = ../Municipium/Carthage/Build/iOS/Curry.framework; sourceTree = "<group>"; };
 		FB7719A61E3040B300C4CB2D /* Ogra.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Ogra.framework; path = ../Municipium/Carthage/Build/iOS/Ogra.framework; sourceTree = "<group>"; };
 		FB7719A71E3040B300C4CB2D /* Runes.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Runes.framework; path = ../Municipium/Carthage/Build/iOS/Runes.framework; sourceTree = "<group>"; };
+		FB7A488D1E7010FD0029D1E0 /* Cartography.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cartography.framework; path = "../Municipium-App-iOS/Build/Products/testsDebug-iphonesimulator/Cartography.framework"; sourceTree = "<group>"; };
 		FBA57D711D861E7200AC2C0E /* Cache.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Cache.swift; sourceTree = "<group>"; };
 		FBC308E21DF2489500E0BDE4 /* PINCache.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = PINCache.framework; path = ../Municipium/Carthage/Build/iOS/PINCache.framework; sourceTree = "<group>"; };
 		FBC342831D934A7A00454BEA /* Validable.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Validable.swift; sourceTree = "<group>"; };
@@ -121,6 +122,7 @@
 		FB26642D1DD9C0320008B7D7 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				FB7A488D1E7010FD0029D1E0 /* Cartography.framework */,
 				FB7719A41E3040B300C4CB2D /* Argo.framework */,
 				FB7719A51E3040B300C4CB2D /* Curry.framework */,
 				FB7719A61E3040B300C4CB2D /* Ogra.framework */,

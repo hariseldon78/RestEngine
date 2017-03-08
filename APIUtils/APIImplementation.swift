@@ -12,6 +12,7 @@ import ObjectMapper
 import RxSwift
 import Alamofire
 import AlamofireObjectMapper
+import Cartography
 import DataVisualization
 //import PromiseKit
 
@@ -190,8 +191,6 @@ public extension Alamofire.Request
 public var nextCallId=0
 func _obsImplementation<T>(debugCallId: Int, method:Alamofire.HTTPMethod,url:String,params:[String:ApiParam]?,view:UIView?,actIndStyle:UIActivityIndicatorViewStyle,debugLevel:APIDebugLevel,logTags:[String],encoding:ParameterEncoding,f:@escaping (_ req:Alamofire.DataRequest,_ observer:AnyObserver<T>,_ runMeAtEnd:@escaping ()->())->())->Observable<T>
 {
-	let actInd=view?.activityHandler(style:actIndStyle)
-	let actBar=UIApplication.shared.activityHandler(style:actIndStyle)
 	
 	return Observable.create{ (observer) -> Disposable in
 		var req:DataRequest?
@@ -199,10 +198,35 @@ func _obsImplementation<T>(debugCallId: Int, method:Alamofire.HTTPMethod,url:Str
 			.request(url, method:method, parameters:params, encoding:encoding, headers:nil)
 			.debugLog(debugCallId:debugCallId, debugLevel:debugLevel,logTags:logTags, params:params)
 		
+		var progressView:UIProgressView?=nil
+		if let v=view, let req=req {
+			progressView=UIProgressView(progressViewStyle: .default)
+			progressView?.tintColor = .red
+			onMain{
+				v.addSubview(progressView!)
+				constrain(progressView!) {
+					let sv=$0.superview!
+					$0.top == sv.top
+//					$0.trailing == sv.trailing
+					$0.leading == sv.leading
+					$0.width >= 100
+					$0.height >= 20
+				}
+				progressView!.setContentCompressionResistancePriority(1000, for: UILayoutConstraintAxis.vertical)
+			}
+			req.downloadProgress { (progress) in
+				onMain{
+					log("[\(debugCallId)]update progress: \(req.progress.fractionCompleted)",logTags+["api"],.verbose)
+					progressView!.setProgress(
+						Float(progress.fractionCompleted),
+						animated: true)
+				}
+			}
+		}
+		
 		let start=Date()
 		f(req!, observer,{ () -> () in
-			actInd?.hide()
-			actBar.hide()
+			progressView?.removeFromSuperview()
 			log("[\(debugCallId)]call duration: \(Date().timeIntervalSince(start))",logTags+["api"],.verbose)
 		})
 		
