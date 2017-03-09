@@ -344,7 +344,7 @@ public protocol APIProtocol
 {
 	associatedtype MappableType
 	associatedtype ApiOutputType
-	func asObservable(_ params:[String:ApiParam]?,view:UIView?,actIndStyle:UIActivityIndicatorViewStyle)->Observable<MappableType>
+	func asObservable(_ params:[String:ApiParam]?,progressContext:ProgressContext?)->Observable<MappableType>
 }
 public protocol CachableAPIProtocol: APIProtocol
 {
@@ -365,7 +365,7 @@ public protocol CommandAPIProtocol
 	associatedtype MappableType
 	associatedtype ApiOutputType
 	associatedtype SubjectType
-	func asObservable(_ obj:SubjectType,view:UIView?,actIndStyle:UIActivityIndicatorViewStyle)->Observable<MappableType>
+	func asObservable(_ obj:SubjectType,progressContext:ProgressContext?)->Observable<MappableType>
 }
 
 open class APICommon
@@ -445,7 +445,7 @@ public final class ArrayAPI<Result> : APICommon,CachableAPIProtocol where Result
 		var allParams=params ?? [:]
 		integrateParams(&allParams, automaticParams: Result.automaticParams)
 		checkParams(allParams, mandatoryParams: Result.mandatoryParams)
-		createArrayObservableWithArrayResult(allParams, view: nil, actIndStyle:.gray, debugLevel: debugLevel,logTags:[Result.tag])
+		createArrayObservableWithArrayResult(allParams, progressContext:nil, debugLevel: debugLevel,logTags:[Result.tag])
 			.subscribe(onNext: { (array:[Result]) -> Void in
 				let key=Cachable.key(allParams)
 				apiCache.set(Cachable(obj:array), forKey: key)
@@ -459,7 +459,7 @@ public final class ArrayAPI<Result> : APICommon,CachableAPIProtocol where Result
 		return _cachedImpl(allParams, Cachable.self, Result.self,logTags:[Result.tag])
 	}
 	
-	public func asObservable(_ params:[String:ApiParam]?=nil,view:UIView?, actIndStyle:UIActivityIndicatorViewStyle = .gray) -> Observable<Result> {
+	public func asObservable(_ params:[String:ApiParam]?=nil,progressContext:ProgressContext?) -> Observable<Result> {
 		var allParams=params ?? [:]
 		integrateParams(&allParams, automaticParams: Result.automaticParams)
 		checkParams(allParams, mandatoryParams: Result.mandatoryParams)
@@ -470,7 +470,7 @@ public final class ArrayAPI<Result> : APICommon,CachableAPIProtocol where Result
 		else
 		{
 			var cacheBuffer=[Result]()
-			let obs:Observable<Result>=createArrayObservableWithItemResult(allParams,view:view, actIndStyle:actIndStyle, debugLevel: debugLevel,logTags:[Result.tag]).shareReplay(API_SHARE_REPLAY_BUFFER).subscribeOn(APIScheduler)
+			let obs:Observable<Result>=createArrayObservableWithItemResult(allParams,progressContext:progressContext, debugLevel: debugLevel,logTags:[Result.tag]).shareReplay(API_SHARE_REPLAY_BUFFER).subscribeOn(APIScheduler)
 			obs.subscribe(onNext: { (e:Result) -> Void in
 				cacheBuffer.append(e)
 				}, onError: nil,
@@ -482,7 +482,7 @@ public final class ArrayAPI<Result> : APICommon,CachableAPIProtocol where Result
 		}
 	}
 	
-	public func asObservableArray(_ params:[String:ApiParam]?=nil,view:UIView?, actIndStyle:UIActivityIndicatorViewStyle = .gray) -> Observable<[Result]> {
+	public func asObservableArray(_ params:[String:ApiParam]?=nil,progressContext:ProgressContext?) -> Observable<[Result]> {
 		var allParams=params ?? [:]
 		integrateParams(&allParams, automaticParams: Result.automaticParams)
 		checkParams(allParams, mandatoryParams: Result.mandatoryParams)
@@ -496,7 +496,7 @@ public final class ArrayAPI<Result> : APICommon,CachableAPIProtocol where Result
 		}
 		else
 		{
-			let obs:Observable<[Result]>=createArrayObservableWithArrayResult(allParams,view:view,actIndStyle:actIndStyle,debugLevel: debugLevel,logTags:[Result.tag]).shareReplay(API_SHARE_REPLAY_BUFFER).subscribeOn(APIScheduler)
+			let obs:Observable<[Result]>=createArrayObservableWithArrayResult(allParams,progressContext:progressContext,debugLevel: debugLevel,logTags:[Result.tag]).shareReplay(API_SHARE_REPLAY_BUFFER).subscribeOn(APIScheduler)
 			obs.subscribe(onNext: { (array:[Result]) -> Void in
 				let key=Cachable.key(allParams)
 				apiCache.set(Cachable(obj:array), forKey: key)
@@ -521,7 +521,7 @@ public final class ObjectAPI<Result>: APICommon,CachableAPIProtocol where Result
 		var allParams=params ?? [:]
 		integrateParams(&allParams, automaticParams: Result.automaticParams)
 		checkParams(allParams, mandatoryParams: Result.mandatoryParams)
-		createObjObservable(allParams,view:nil,actIndStyle: .gray,debugLevel: debugLevel,logTags:[Result.tag]).subscribe(onNext: {
+		createObjObservable(allParams,progressContext:nil,debugLevel: debugLevel,logTags:[Result.tag]).subscribe(onNext: {
 			(object:Result) -> Void in
 			apiCache.set(Cachable(obj:object), forKey: Cachable.key(allParams))
 			}).addDisposableTo(globalDisposeBag)
@@ -533,7 +533,7 @@ public final class ObjectAPI<Result>: APICommon,CachableAPIProtocol where Result
 		checkParams(allParams, mandatoryParams: Result.mandatoryParams)
 		return _cachedImpl(allParams, Cachable.self, Result.self,logTags:[Result.tag])
 	}
-	public func asObservable(_ params:[String:ApiParam]?=nil,view:UIView?, actIndStyle:UIActivityIndicatorViewStyle = .gray) -> Observable<Result> {
+	public func asObservable(_ params:[String:ApiParam]?=nil,progressContext:ProgressContext?) -> Observable<Result> {
 		var allParams=params ?? [:]
 		integrateParams(&allParams, automaticParams: Result.automaticParams)
 		checkParams(allParams, mandatoryParams: Result.mandatoryParams)
@@ -543,7 +543,7 @@ public final class ObjectAPI<Result>: APICommon,CachableAPIProtocol where Result
 		}
 		else
 		{
-			let obs:Observable<Result>=createObjObservable(allParams,view:view,actIndStyle:actIndStyle, debugLevel: debugLevel,logTags:[Result.tag]).shareReplay(API_SHARE_REPLAY_BUFFER).subscribeOn(APIScheduler)
+			let obs:Observable<Result>=createObjObservable(allParams,progressContext:progressContext, debugLevel: debugLevel,logTags:[Result.tag]).shareReplay(API_SHARE_REPLAY_BUFFER).subscribeOn(APIScheduler)
 			obs.subscribe(onNext:{ (e:Result) -> Void in
 				let key=Cachable.key(allParams)
 				apiCache.set(Cachable(obj:e), forKey: key)
@@ -596,8 +596,8 @@ public extension APICallWithArrayResult
 		return APIType()
 	}
 	
-	static func api(_ view:UIView?,params:[String:Any]?=nil) -> Observable<[Self]> {
- 		return API().asObservableArray(view: view)
+	static func api(_ progressContext:ProgressContext?,params:[String:Any]?=nil) -> Observable<[Self]> {
+ 		return API().asObservableArray(progressContext:progressContext)
  	}
  	static func invalidateCache() {
  		API().invalidateCache(nil)
@@ -718,18 +718,14 @@ public final class CommandAPI<Result>: APICommon,CommandAPIProtocol where Result
 		logDump(map.currentValue,name:"map.currentValue",["api",Result.tag],.verbose)
 		return map.typeSafeJSON
 	}
-	public func asObservable(_ obj:SubjectType?,view:UIView?) -> Observable<Result> {
-		guard let obj=obj else { return Observable.error(NSError(domain: "Unexpected nil subject", code: 0, userInfo: nil)) }
-		return asObservable(obj,view:view)
-	}
 
-	public func asObservable(_ obj:SubjectType,view:UIView?, actIndStyle:UIActivityIndicatorViewStyle = .gray) -> Observable<Result> {
+	public func asObservable(_ obj:SubjectType,progressContext: ProgressContext?) -> Observable<Result> {
 		if let subj=obj as? APISubject
 		{
 			subj.invalidateCache()
 		}
 		
-		let obs:Observable<Result>=createObjObservable(extractJson(obj),view:view,actIndStyle:actIndStyle,debugLevel: debugLevel,logTags:[Result.tag])
+		let obs:Observable<Result>=createObjObservable(extractJson(obj),progressContext: progressContext,debugLevel: debugLevel,logTags:[Result.tag])
 		return obs
 	}
 }

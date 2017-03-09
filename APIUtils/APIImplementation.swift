@@ -14,6 +14,7 @@ import Alamofire
 import AlamofireObjectMapper
 import Cartography
 import DataVisualization
+import M13ProgressSuite
 //import PromiseKit
 
 let RetryCountOnError=3
@@ -188,50 +189,68 @@ public extension Alamofire.Request
 	}
 }
 
+public extension UIViewController {
+	public var progressContext:ProgressContext { return ProgressContext(viewController: self, view: nil, type: .indeterminate) }
+}
+
 public var nextCallId=0
-func _obsImplementation<T>(debugCallId: Int, method:Alamofire.HTTPMethod,url:String,params:[String:ApiParam]?,view:UIView?,actIndStyle:UIActivityIndicatorViewStyle,debugLevel:APIDebugLevel,logTags:[String],encoding:ParameterEncoding,f:@escaping (_ req:Alamofire.DataRequest,_ observer:AnyObserver<T>,_ runMeAtEnd:@escaping ()->())->())->Observable<T>
+func _obsImplementation<T>(
+	debugCallId: Int,
+	method:Alamofire.HTTPMethod,
+	url:String,
+	params:[String:ApiParam]?,
+	progressContext:ProgressContext?,
+	debugLevel:APIDebugLevel,
+	logTags:[String],
+	encoding:ParameterEncoding,
+	f:@escaping (_ req:Alamofire.DataRequest,_ observer:AnyObserver<T>,_ runMeAtEnd:@escaping ()->())->())->Observable<T>
 {
 	
 	return Observable.create{ (observer) -> Disposable in
-		var req:DataRequest?
-		req=MunicipiumAPIAlamofire
+		let req=MunicipiumAPIAlamofire
 			.request(url, method:method, parameters:params, encoding:encoding, headers:nil)
 			.debugLog(debugCallId:debugCallId, debugLevel:debugLevel,logTags:logTags, params:params)
 		
-		var progressView:UIProgressView?=nil
-		if let v=view, let req=req {
-			progressView=UIProgressView(progressViewStyle: .default)
-			progressView?.tintColor = .red
+		let navCon=progressContext?.viewController?.navigationController
+		
+//		var progressView:UIProgressView?=nil
+//		if let v=view, let req=req {
+//			progressView=UIProgressView(progressViewStyle: .default)
+//			progressView?.tintColor = .red
 			onMain{
-				v.addSubview(progressView!)
-				constrain(progressView!) {
-					let sv=$0.superview!
-					$0.top == sv.top
-//					$0.trailing == sv.trailing
-					$0.leading == sv.leading
-					$0.width >= 100
-					$0.height >= 20
-				}
-				progressView!.setContentCompressionResistancePriority(1000, for: UILayoutConstraintAxis.vertical)
+//				v.addSubview(progressView!)
+//				constrain(progressView!) {
+//					let sv=$0.superview!
+//					$0.top == sv.top
+////					$0.trailing == sv.trailing
+//					$0.leading == sv.leading
+//					$0.width >= 100
+//					$0.height >= 20
+//				}
+//				progressView!.setContentCompressionResistancePriority(1000, for: UILayoutConstraintAxis.vertical)
+				navCon?.showProgress()
+				navCon?.setIndeterminate(true)
 			}
 			req.downloadProgress { (progress) in
 				onMain{
 					log("[\(debugCallId)]update progress: \(req.progress.fractionCompleted)",logTags+["api"],.verbose)
-					progressView!.setProgress(
-						Float(progress.fractionCompleted),
-						animated: true)
+//					progressView!.setProgress(
+//						Float(progress.fractionCompleted),
+//						animated: true)
+					
 				}
 			}
-		}
+//		}
 		
 		let start=Date()
-		f(req!, observer,{ () -> () in
-			progressView?.removeFromSuperview()
+		f(req, observer,{ () -> () in
+			navCon?.finishProgress()
+//			progressView?.removeFromSuperview()
 			log("[\(debugCallId)]call duration: \(Date().timeIntervalSince(start))",logTags+["api"],.verbose)
 		})
 		
 		return Disposables.create {
-				req?.cancel()
+				req.cancel()
 		}
 		}.retryWhen { (errors: Observable<NSError>) in
 			return errors.scan(0) { ( a, e) in
@@ -249,11 +268,11 @@ func _obsImplementation<T>(debugCallId: Int, method:Alamofire.HTTPMethod,url:Str
 }
 
 
-func createObjObservable<T>(_ params:[String:ApiParam]?,view:UIView?,actIndStyle:UIActivityIndicatorViewStyle,debugLevel:APIDebugLevel,logTags:[String])->Observable<T> where T:ObjectWithUrl, T:Mappable
+func createObjObservable<T>(_ params:[String:ApiParam]?,progressContext:ProgressContext?,debugLevel:APIDebugLevel,logTags:[String])->Observable<T> where T:ObjectWithUrl, T:Mappable
 {
 	let debugCallId=nextCallId
 	nextCallId+=1 // not thread safe, but it's only for debugging purpose so no worries
-	return _obsImplementation(debugCallId: debugCallId, method:T.method, url: T.url(params), params: params, view: view, actIndStyle:actIndStyle, debugLevel: debugLevel,logTags:logTags, encoding:T.encoding) { (req, observer, runMeAtEnd) -> () in
+	return _obsImplementation(debugCallId: debugCallId, method:T.method, url: T.url(params), params: params, progressContext:progressContext, debugLevel: debugLevel,logTags:logTags, encoding:T.encoding) { (req, observer, runMeAtEnd) -> () in
 		req.responseObject{ (response:DataResponse<T>) -> Void in
 			debug(debugCallId: debugCallId, response: response,debugLevel: debugLevel,logTags:logTags)
 			switch response.result
@@ -275,11 +294,11 @@ func createObjObservable<T>(_ params:[String:ApiParam]?,view:UIView?,actIndStyle
 		}
 	}
 }
-func createArrayObservableWithItemResult<T>(_ params:[String:ApiParam]?,view:UIView?,actIndStyle:UIActivityIndicatorViewStyle,debugLevel:APIDebugLevel,logTags:[String])->Observable<T> where T:ObjectWithArrayUrl, T:Mappable
+func createArrayObservableWithItemResult<T>(_ params:[String:ApiParam]?,progressContext:ProgressContext?,debugLevel:APIDebugLevel,logTags:[String])->Observable<T> where T:ObjectWithArrayUrl, T:Mappable
 {
 	let debugCallId=nextCallId
 	nextCallId+=1 // not thread safe, but it's only for debugging purpose so no worries
-	return _obsImplementation(debugCallId: debugCallId, method:T.method, url: T.arrayUrl(params), params: params, view: view,actIndStyle:actIndStyle, debugLevel: debugLevel,logTags:logTags,encoding:T.encoding) { (req, observer, runMeAtEnd) -> () in
+	return _obsImplementation(debugCallId: debugCallId, method:T.method, url: T.arrayUrl(params), params: params, progressContext:progressContext, debugLevel: debugLevel,logTags:logTags,encoding:T.encoding) { (req, observer, runMeAtEnd) -> () in
 		req.responseArray{ (response:DataResponse<[T]>) -> Void in
 			debug(debugCallId: debugCallId, response: response,debugLevel: debugLevel,logTags:logTags)
 			switch response.result
@@ -301,11 +320,11 @@ func createArrayObservableWithItemResult<T>(_ params:[String:ApiParam]?,view:UIV
 	}
 }
 
-func createArrayObservableWithArrayResult<T>(_ params:[String:ApiParam]?,view:UIView?,actIndStyle:UIActivityIndicatorViewStyle,debugLevel:APIDebugLevel,logTags:[String])->Observable<[T]> where T:ObjectWithArrayUrl, T:Mappable
+func createArrayObservableWithArrayResult<T>(_ params:[String:ApiParam]?,progressContext:ProgressContext?,debugLevel:APIDebugLevel,logTags:[String])->Observable<[T]> where T:ObjectWithArrayUrl, T:Mappable
 {
 	let debugCallId=nextCallId
 	nextCallId+=1 // not thread safe, but it's only for debugging purpose so no worries
-	return _obsImplementation(debugCallId: debugCallId, method:T.method, url: T.arrayUrl(params), params: params, view: view, actIndStyle:actIndStyle,debugLevel: debugLevel,logTags:logTags,encoding:T.encoding) { (req, observer, runMeAtEnd) -> () in
+	return _obsImplementation(debugCallId: debugCallId, method:T.method, url: T.arrayUrl(params), params: params, progressContext:progressContext, debugLevel: debugLevel,logTags:logTags,encoding:T.encoding) { (req, observer, runMeAtEnd) -> () in
 		req.responseArray{ (response:DataResponse<[T]>) -> Void in
 			debug(debugCallId:debugCallId, response:response, debugLevel:debugLevel,logTags:logTags)
 			switch response.result

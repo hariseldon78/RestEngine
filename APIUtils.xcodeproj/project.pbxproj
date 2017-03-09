@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		FB15E2721E65D2AE00EEECEF /* Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB15E2711E65D2AE00EEECEF /* Utils.swift */; };
+		FB21EFC01E7175330026105D /* M13ProgressSuite.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FB21EFBF1E7175330026105D /* M13ProgressSuite.framework */; };
 		FB5CE9841BF3F99500ACD6CF /* APIUtils.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FB5CE9791BF3F99400ACD6CF /* APIUtils.framework */; };
 		FB5CE9891BF3F99500ACD6CF /* APIUtilsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB5CE9881BF3F99500ACD6CF /* APIUtilsTests.swift */; };
 		FB5D4BA41BF3FED100EA8FF0 /* APIUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB5D4BA01BF3FED100EA8FF0 /* APIUtils.swift */; };
@@ -42,6 +43,7 @@
 		FB137F621CF12DAF004F6CF3 /* APIUtils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = APIUtils.h; sourceTree = "<group>"; };
 		FB137F631CF12DF5004F6CF3 /* DataVisualization.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = DataVisualization.framework; path = "/Users/robertoprevidi/Developer/slowmedia/Municipium/Municipium-App-iOS/Pods/../build/Debug-iphoneos/DataVisualization.framework"; sourceTree = "<absolute>"; };
 		FB15E2711E65D2AE00EEECEF /* Utils.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Utils.swift; sourceTree = "<group>"; };
+		FB21EFBF1E7175330026105D /* M13ProgressSuite.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = M13ProgressSuite.framework; path = "../Municipium-App-iOS/Municipium/Carthage/Build/iOS/M13ProgressSuite.framework"; sourceTree = "<group>"; };
 		FB26642E1DD9C0320008B7D7 /* ObjectMapper.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ObjectMapper.framework; path = ../Carthage/Build/iOS/ObjectMapper.framework; sourceTree = "<group>"; };
 		FB2664301DD9C04C0008B7D7 /* Alamofire.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Alamofire.framework; path = ../Carthage/Build/iOS/Alamofire.framework; sourceTree = "<group>"; };
 		FB2664311DD9C04C0008B7D7 /* AlamofireObjectMapper.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AlamofireObjectMapper.framework; path = ../Carthage/Build/iOS/AlamofireObjectMapper.framework; sourceTree = "<group>"; };
@@ -82,6 +84,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FB21EFC01E7175330026105D /* M13ProgressSuite.framework in Frameworks */,
 				FB7719A81E3040B300C4CB2D /* Argo.framework in Frameworks */,
 				FB7719A91E3040B300C4CB2D /* Curry.framework in Frameworks */,
 				FB7719AA1E3040B300C4CB2D /* Ogra.framework in Frameworks */,
@@ -122,6 +125,7 @@
 		FB26642D1DD9C0320008B7D7 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				FB21EFBF1E7175330026105D /* M13ProgressSuite.framework */,
 				FB7A488D1E7010FD0029D1E0 /* Cartography.framework */,
 				FB7719A41E3040B300C4CB2D /* Argo.framework */,
 				FB7719A51E3040B300C4CB2D /* Curry.framework */,
