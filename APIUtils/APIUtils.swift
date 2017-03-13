@@ -459,7 +459,7 @@ public final class ArrayAPI<Result> : APICommon,CachableAPIProtocol where Result
 		return _cachedImpl(allParams, Cachable.self, Result.self,logTags:[Result.tag])
 	}
 	
-	public func asObservable(_ params:[String:ApiParam]?=nil,progressContext:ProgressContext?) -> Observable<Result> {
+	public func asObservable(_ params:[String:ApiParam]?=nil,progressContext:ProgressContext?=nil) -> Observable<Result> {
 		var allParams=params ?? [:]
 		integrateParams(&allParams, automaticParams: Result.automaticParams)
 		checkParams(allParams, mandatoryParams: Result.mandatoryParams)
@@ -482,7 +482,7 @@ public final class ArrayAPI<Result> : APICommon,CachableAPIProtocol where Result
 		}
 	}
 	
-	public func asObservableArray(_ params:[String:ApiParam]?=nil,progressContext:ProgressContext?) -> Observable<[Result]> {
+	public func asObservableArray(_ params:[String:ApiParam]?=nil,progressContext:ProgressContext?=nil) -> Observable<[Result]> {
 		var allParams=params ?? [:]
 		integrateParams(&allParams, automaticParams: Result.automaticParams)
 		checkParams(allParams, mandatoryParams: Result.mandatoryParams)
@@ -533,7 +533,7 @@ public final class ObjectAPI<Result>: APICommon,CachableAPIProtocol where Result
 		checkParams(allParams, mandatoryParams: Result.mandatoryParams)
 		return _cachedImpl(allParams, Cachable.self, Result.self,logTags:[Result.tag])
 	}
-	public func asObservable(_ params:[String:ApiParam]?=nil,progressContext:ProgressContext?) -> Observable<Result> {
+	public func asObservable(_ params:[String:ApiParam]?=nil,progressContext:ProgressContext?=nil) -> Observable<Result> {
 		var allParams=params ?? [:]
 		integrateParams(&allParams, automaticParams: Result.automaticParams)
 		checkParams(allParams, mandatoryParams: Result.mandatoryParams)
@@ -596,7 +596,7 @@ public extension APICallWithArrayResult
 		return APIType()
 	}
 	
-	static func api(_ progressContext:ProgressContext?,params:[String:Any]?=nil) -> Observable<[Self]> {
+	static func api(_ progressContext:ProgressContext?=nil,params:[String:Any]?=nil) -> Observable<[Self]> {
  		return API().asObservableArray(progressContext:progressContext)
  	}
  	static func invalidateCache() {
@@ -719,7 +719,7 @@ public final class CommandAPI<Result>: APICommon,CommandAPIProtocol where Result
 		return map.typeSafeJSON
 	}
 
-	public func asObservable(_ obj:SubjectType,progressContext: ProgressContext?) -> Observable<Result> {
+	public func asObservable(_ obj:SubjectType,progressContext: ProgressContext?=nil) -> Observable<Result> {
 		if let subj=obj as? APISubject
 		{
 			subj.invalidateCache()
