@@ -193,6 +193,11 @@ public extension UIViewController {
 	public var progressContext:ProgressContext { return ProgressContext(viewController: self, view: nil, type: .indeterminate) }
 }
 
+struct Timestamp: CustomStringConvertible {
+	let t=Date()
+	var description: String {return t.description}
+}
+
 public var nextCallId=0
 func _obsImplementation<T>(
 	debugCallId: Int,
@@ -229,23 +234,26 @@ func _obsImplementation<T>(
 //				}
 //				progressView!.setContentCompressionResistancePriority(1000, for: UILayoutConstraintAxis.vertical)
 				navCon?.showProgress()
+				log("[\(debugCallId)] \(Timestamp()) showProgress",logTags+["api"],.verbose)
 				navCon?.setIndeterminate(true)
 			}
-			req.downloadProgress { (progress) in
-				onMain{
-					log("[\(debugCallId)]update progress: \(req.progress.fractionCompleted)",logTags+["api"],.verbose)
-//					progressView!.setProgress(
-//						Float(progress.fractionCompleted),
-//						animated: true)
-					
-				}
-			}
+//			req.downloadProgress { (progress) in
+//				onMain{
+//					log("[\(debugCallId)]update progress: \(req.progress.fractionCompleted)",logTags+["api"],.verbose)
+////					progressView!.setProgress(
+////						Float(progress.fractionCompleted),
+////						animated: true)
+//					
+//				}
+//			}
 //		}
 		
 		let start=Date()
 		f(req, observer,{ () -> () in
 			navCon?.finishProgress()
-//			progressView?.removeFromSuperview()
+			log("[\(debugCallId)] \(Timestamp()) finishProgress",logTags+["api"],.verbose)
+
+			//			progressView?.removeFromSuperview()
 			log("[\(debugCallId)]call duration: \(Date().timeIntervalSince(start))",logTags+["api"],.verbose)
 		})
 		
