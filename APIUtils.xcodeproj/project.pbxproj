@@ -20,6 +20,7 @@
 		FB7719AA1E3040B300C4CB2D /* Ogra.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FB7719A61E3040B300C4CB2D /* Ogra.framework */; };
 		FB7719AB1E3040B300C4CB2D /* Runes.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FB7719A71E3040B300C4CB2D /* Runes.framework */; };
 		FBA57D721D861E7200AC2C0E /* Cache.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBA57D711D861E7200AC2C0E /* Cache.swift */; };
+		FBA7F4A51E78A87E0075B509 /* Progress.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBA7F4A41E78A87E0075B509 /* Progress.swift */; };
 		FBC308E31DF2489500E0BDE4 /* PINCache.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FBC308E21DF2489500E0BDE4 /* PINCache.framework */; };
 		FBC342841D934A7A00454BEA /* Validable.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBC342831D934A7A00454BEA /* Validable.swift */; };
 		FBCCE3421E2FB8CD00C1D58E /* RestEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBCCE3411E2FB8CD00C1D58E /* RestEngine.swift */; };
@@ -70,6 +71,7 @@
 		FB7719A71E3040B300C4CB2D /* Runes.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Runes.framework; path = ../Municipium/Carthage/Build/iOS/Runes.framework; sourceTree = "<group>"; };
 		FB7A488D1E7010FD0029D1E0 /* Cartography.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cartography.framework; path = "../Municipium-App-iOS/Build/Products/testsDebug-iphonesimulator/Cartography.framework"; sourceTree = "<group>"; };
 		FBA57D711D861E7200AC2C0E /* Cache.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Cache.swift; sourceTree = "<group>"; };
+		FBA7F4A41E78A87E0075B509 /* Progress.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Progress.swift; sourceTree = "<group>"; };
 		FBC308E21DF2489500E0BDE4 /* PINCache.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = PINCache.framework; path = ../Municipium/Carthage/Build/iOS/PINCache.framework; sourceTree = "<group>"; };
 		FBC342831D934A7A00454BEA /* Validable.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Validable.swift; sourceTree = "<group>"; };
 		FBCCE3411E2FB8CD00C1D58E /* RestEngine.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RestEngine.swift; sourceTree = "<group>"; };
@@ -167,6 +169,7 @@
 		FB5CE97B1BF3F99400ACD6CF /* APIUtils */ = {
 			isa = PBXGroup;
 			children = (
+				FBA7F4A41E78A87E0075B509 /* Progress.swift */,
 				FBCCE3411E2FB8CD00C1D58E /* RestEngine.swift */,
 				FBA57D711D861E7200AC2C0E /* Cache.swift */,
 				FB5D4BA01BF3FED100EA8FF0 /* APIUtils.swift */,
@@ -301,6 +304,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FBA7F4A51E78A87E0075B509 /* Progress.swift in Sources */,
 				FBCCE3421E2FB8CD00C1D58E /* RestEngine.swift in Sources */,
 				FB5D4BA51BF3FED100EA8FF0 /* Validation.swift in Sources */,
 				FBA57D721D861E7200AC2C0E /* Cache.swift in Sources */,
