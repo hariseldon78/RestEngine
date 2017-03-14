@@ -217,48 +217,26 @@ func _obsImplementation<T>(
 			.debugLog(debugCallId:debugCallId, debugLevel:debugLevel,logTags:logTags, params:params)
 		
 		let navCon=progressContext?.viewController?.navigationController
-		
-//		var progressView:UIProgressView?=nil
-//		if let v=view, let req=req {
-//			progressView=UIProgressView(progressViewStyle: .default)
-//			progressView?.tintColor = .red
-			onMain{
-//				v.addSubview(progressView!)
-//				constrain(progressView!) {
-//					let sv=$0.superview!
-//					$0.top == sv.top
-////					$0.trailing == sv.trailing
-//					$0.leading == sv.leading
-//					$0.width >= 100
-//					$0.height >= 20
-//				}
-//				progressView!.setContentCompressionResistancePriority(1000, for: UILayoutConstraintAxis.vertical)
-				navCon?.showProgress()
-				log("[\(debugCallId)] \(Timestamp()) showProgress",logTags+["api"],.verbose)
-				navCon?.setIndeterminate(true)
-			}
-//			req.downloadProgress { (progress) in
-//				onMain{
-//					log("[\(debugCallId)]update progress: \(req.progress.fractionCompleted)",logTags+["api"],.verbose)
-////					progressView!.setProgress(
-////						Float(progress.fractionCompleted),
-////						animated: true)
-//					
-//				}
-//			}
-//		}
+		var done=false
+		delay(1){
+			guard !done else {return}
+			navCon?.showProgress()
+			log("[\(debugCallId)] \(Timestamp()) showProgress: \(progressContext)",logTags+["api"],.verbose)
+			navCon?.setIndeterminate(true)
+		}
 		
 		let start=Date()
 		f(req, observer,{ () -> () in
+			done=true
 			navCon?.finishProgress()
-			log("[\(debugCallId)] \(Timestamp()) finishProgress",logTags+["api"],.verbose)
+			log("[\(debugCallId)] \(Timestamp()) finishProgress: \(progressContext)",logTags+["api"],.verbose)
 
-			//			progressView?.removeFromSuperview()
 			log("[\(debugCallId)]call duration: \(Date().timeIntervalSince(start))",logTags+["api"],.verbose)
 		})
 		
 		return Disposables.create {
-				req.cancel()
+			done=true
+			req.cancel()
 		}
 		}.retryWhen { (errors: Observable<NSError>) in
 			return errors.scan(0) { ( a, e) in
