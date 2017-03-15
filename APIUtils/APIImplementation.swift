@@ -216,10 +216,25 @@ func _obsImplementation<T>(
 				progressType.start()
 				log("[\(debugCallId)] \(Timestamp()) showProgress: \(progressType)",logTags+["api"],.verbose)
 			}
-		let req=MunicipiumAPIAlamofire
-			.request(url, method:method, parameters:params, encoding:encoding, headers:nil)
-			.debugLog(debugCallId:debugCallId, debugLevel:debugLevel,logTags:logTags, params:params)
-		
+		var req:Alamofire.DataRequest!
+		if encoding is JSONEncoding {
+			
+			let jsonData=try! JSONSerialization.data(withJSONObject: params ?? [:], options: .prettyPrinted)
+			req=MunicipiumAPIAlamofire
+				.upload(jsonData, to: url, method: method, headers: ["Content-type":"application/json"])
+				.uploadProgress(closure: { (prog) in
+					
+					
+					log("[\(debugCallId)] \(Timestamp()) setProgress: \(prog.completedUnitCount)/\(prog.totalUnitCount) = \(prog.fractionCompleted)",logTags+["api"],.verbose)
+					progressType?.setCompletion(CGFloat(prog.fractionCompleted))
+			})
+		} else {
+			req=MunicipiumAPIAlamofire
+				.request(url, method:method, parameters:params, encoding:encoding, headers:nil)
+		}
+
+		req=req.debugLog(debugCallId:debugCallId, debugLevel:debugLevel,logTags:logTags, params:params)
+
 		
 		let start=Date()
 		onMain {
@@ -235,7 +250,7 @@ func _obsImplementation<T>(
 		return Disposables.create {
 			guard !done else {return}
 			done=true
-//			actInd.hide()
+			actInd.hide()
 			req.cancel()
 			guard let progressType=progressType else {return}
 			progressType.cancel()

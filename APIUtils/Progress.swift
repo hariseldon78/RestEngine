@@ -13,22 +13,27 @@ import DataVisualization
 public class ProgressHandler {
 	class Step:ProgressController {
 		let handler:ProgressHandler
-		init(handler:ProgressHandler) {
+		let id:Int
+		init(handler:ProgressHandler,id:Int) {
 			self.handler=handler
+			self.id=id
 		}
 		func start() {
-			handler.stepIsStarted()
+			handler.stepIsStarted(id)
 		}
-		func setCompletion(_:CGFloat) {}
+		func setCompletion(_ v:CGFloat) {
+			handler.setStepCompletion(id,v)
+		}
 		func finish() {
-			handler.stepIsDone()
+			handler.stepIsDone(id)
 		}
 		func cancel() {
-			handler.stepIsCanceled()
+			handler.stepIsCanceled(id)
 		}
 	}
 	let stepLength:CGFloat
 	var stepsToFinish=0
+	var stepCompletions=[Int:CGFloat]()
 	let vc:UIViewController
 	var navCon:UINavigationController? {return vc.navigationController}
 	public var stepHandlers=[ProgressController]()
@@ -37,25 +42,40 @@ public class ProgressHandler {
 		self.vc=vc
 		stepsToFinish=steps
 		stepLength=CGFloat(1.0/CGFloat(steps))
-		for _ in 0..<steps {
-			stepHandlers.append(Step(handler:self))
+		for i in 0..<steps {
+			stepHandlers.append(Step(handler:self,id:i))
 		}
 	}
-	func stepIsStarted() {
+	func stepIsStarted(_ id:Int) {
 		guard let nc=navCon else {return}
+		stepCompletions[id]=0
 		nc.showProgress()
 		nc.setIndeterminate(false)
 	}
-	func stepIsDone() {
+	func stepIsDone(_ id:Int) {
 		stepsToFinish -= 1
-		guard let nc=navCon else {return}
-		nc.setProgress(1.0-stepLength*CGFloat(stepsToFinish), animated: true)
 		if stepsToFinish==0 {
+			guard let nc=navCon else {return}
 			nc.finishProgress()
+		} else {
+			stepCompletions[id]=stepLength
+			updateProgress()
 		}
 	}
-	func stepIsCanceled() {
-		stepIsDone()
+	func updateProgress() {
+		guard let nc=navCon else {return}
+		let totalCompletion=stepCompletions
+			.map { (_, value) in return value }
+			.reduce(CGFloat(0), +)
+		nc.setProgress(totalCompletion, animated: true)
+	}
+	func setStepCompletion(_ id:Int,_ v:CGFloat) {
+		stepCompletions[id]=v/CGFloat(stepHandlers.count)
+		updateProgress()
+	}
+	func stepIsCanceled(_ id:Int) {
+		stepCompletions[id]=0
+		updateProgress()
 	}
 }
 
@@ -75,8 +95,16 @@ extension ProgressType:ProgressController
 			_=0
 		}
 	}
-	public func setCompletion(_:CGFloat)
+	public func setCompletion(_ fraction:CGFloat)
 	{
+		switch self {
+		case .indeterminate(let vc):
+			_=0
+		case .determinate(let step):
+			step.setCompletion(fraction)
+		case .none:
+			_=0
+		}
 	}
 	public func finish()
 	{
