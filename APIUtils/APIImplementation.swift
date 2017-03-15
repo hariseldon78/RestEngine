@@ -212,10 +212,10 @@ func _obsImplementation<T>(
 		var done=false
 		let actInd=UIApplication.shared.activityHandler(style: UIActivityIndicatorViewStyle.white)
 		delay(0.5){
-			guard let progressType=progressType, !done else {return}
-			progressType.start()
-			log("[\(debugCallId)] \(Timestamp()) showProgress: \(progressType)",logTags+["api"],.verbose)
-		}
+				guard let progressType=progressType, !done else {return}
+				progressType.start()
+				log("[\(debugCallId)] \(Timestamp()) showProgress: \(progressType)",logTags+["api"],.verbose)
+			}
 		let req=MunicipiumAPIAlamofire
 			.request(url, method:method, parameters:params, encoding:encoding, headers:nil)
 			.debugLog(debugCallId:debugCallId, debugLevel:debugLevel,logTags:logTags, params:params)

@@ -17,9 +17,8 @@ public func delay(_ delay:Double, closure:@escaping ()->()) {
 }
 
 public func onMain(_ f:@escaping ()->Void) {
-	OperationQueue.main.addOperation{
-		f()
-	}
+//	OperationQueue.main.addOperation
+	DispatchQueue.main.async(execute:f)
 }
 
 

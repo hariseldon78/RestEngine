@@ -67,8 +67,8 @@ extension ProgressType:ProgressController
 		switch self {
 		case .indeterminate(let vc):
 			let navCon=vc.navigationController
-			navCon?.setIndeterminate(true)
 			navCon?.showProgress()
+			navCon?.setIndeterminate(true)
 		case .determinate(let step):
 			step.start()
 		case .none:
@@ -83,6 +83,7 @@ extension ProgressType:ProgressController
 		switch self {
 		case .indeterminate(let vc):
 			let navCon=vc.navigationController
+			log("isShowingProgressBar():\(navCon?.isShowingProgressBar())", tags: ["progress"], level: .verbose)
 			navCon?.finishProgress()
 		case .determinate(let step):
 			step.finish()
@@ -96,7 +97,7 @@ extension ProgressType:ProgressController
 		switch self {
 		case .indeterminate(let vc):
 			let navCon=vc.navigationController
-			navCon?.finishProgress()
+			navCon?.cancelProgress()
 		case .determinate(let step):
 			step.cancel()
 		case .none:
