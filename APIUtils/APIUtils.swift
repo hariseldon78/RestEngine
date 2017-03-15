@@ -16,9 +16,9 @@ import DataVisualization
 import SwiftDate
 let API_SHARE_REPLAY_BUFFER=100
 
-//func assertMain() {
-//		assert(OperationQueue.current == OperationQueue.main)
-//}
+func assertMain() {
+		assert(OperationQueue.current == OperationQueue.main)
+}
 //
 func assertBackground() {
 	#if DEBUG

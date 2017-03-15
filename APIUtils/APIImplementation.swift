@@ -210,6 +210,7 @@ func _obsImplementation<T>(
 	
 	return Observable.create{ (observer) -> Disposable in
 		var done=false
+		let actInd=UIApplication.shared.activityHandler(style: UIActivityIndicatorViewStyle.white)
 		delay(0.5){
 			guard let progressType=progressType, !done else {return}
 			progressType.start()
@@ -224,6 +225,7 @@ func _obsImplementation<T>(
 		onMain {
 			f(req, observer,{ () -> () in
 				log("[\(debugCallId)]call duration: \(Date().timeIntervalSince(start))",logTags+["api"],.verbose)
+				actInd.hide()
 				done=true
 				guard let progressType=progressType else {return}
 				progressType.finish()
@@ -233,6 +235,7 @@ func _obsImplementation<T>(
 		return Disposables.create {
 			guard !done else {return}
 			done=true
+//			actInd.hide()
 			req.cancel()
 			guard let progressType=progressType else {return}
 			progressType.cancel()
