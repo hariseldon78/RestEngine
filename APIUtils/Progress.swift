@@ -35,11 +35,14 @@ public class ProgressHandler {
 	var stepsToFinish=0
 	var stepCompletions=[Int:CGFloat]()
 	let vc:UIViewController
+	let opacity:Bool
+	var isStarted=false
 	var navCon:UINavigationController? {return vc.navigationController}
 	public var stepHandlers=[ProgressController]()
-	public init(vc:UIViewController,steps:Int)
+	public init(vc:UIViewController,steps:Int,opacity:Bool=false)
 	{
 		self.vc=vc
+		self.opacity=opacity
 		stepsToFinish=steps
 		stepLength=CGFloat(1.0/CGFloat(steps))
 		for i in 0..<steps {
@@ -49,6 +52,11 @@ public class ProgressHandler {
 	func stepIsStarted(_ id:Int) {
 		guard let nc=navCon else {return}
 		stepCompletions[id]=0
+		if isStarted {return}
+		let opacityView=UIView(frame: vc.view.frame)
+		opacityView.backgroundColor=UIColor(white: 0, alpha: 0.5)
+		opacityView.tag=9999
+		vc.view.addSubview(opacityView)
 		nc.showProgress()
 		nc.setIndeterminate(false)
 	}
@@ -57,6 +65,9 @@ public class ProgressHandler {
 		if stepsToFinish==0 {
 			guard let nc=navCon else {return}
 			nc.finishProgress()
+			if let opacityView=vc.view.viewWithTag(9999) {
+				opacityView.removeFromSuperview()
+			}
 		} else {
 			stepCompletions[id]=stepLength
 			updateProgress()
