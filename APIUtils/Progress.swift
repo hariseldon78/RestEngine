@@ -9,6 +9,7 @@
 import Foundation
 import M13ProgressSuite
 import DataVisualization
+import Alamofire
 
 public class ProgressHandler {
 	class Step:ProgressController {
@@ -21,7 +22,7 @@ public class ProgressHandler {
 		func start() {
 			handler.stepIsStarted(id)
 		}
-		func setCompletion(_ v:CGFloat) {
+		func setCompletion(_ v:CGFloat,eta:TimeInterval) {
 			handler.setStepCompletion(id,v)
 		}
 		func finish() {
@@ -106,16 +107,25 @@ extension ProgressType:ProgressController
 			_=0
 		}
 	}
-	public func setCompletion(_ fraction:CGFloat)
+	public func setCompletion(_ fraction:CGFloat,eta:TimeInterval)
 	{
+		print("prog: \(fraction); eta: \(eta)")
 		switch self {
 		case .indeterminate(let vc):
+			print("@@@@@@@@@@@@@@@@@@@@ progress indeterminate:\(fraction)")
 			_=0
 		case .determinate(let step):
-			step.setCompletion(fraction)
+			step.setCompletion(fraction,eta:eta)
 		case .none:
 			_=0
 		}
+	}
+	public func setCompletion(progress:Alamofire.Progress,start:Date) {
+		let fraction=progress.fractionCompleted
+		let elapsedTime=Date().timeIntervalSince(start)
+		let eta=elapsedTime*(1.0-fraction)/fraction
+		setCompletion(CGFloat(fraction),eta:eta)
+
 	}
 	public func finish()
 	{

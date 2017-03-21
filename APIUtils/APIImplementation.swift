@@ -209,6 +209,7 @@ func _obsImplementation<T>(
 {
 	
 	return Observable.create{ (observer) -> Disposable in
+		var upStart,downStart : Date?
 		var done=false
 		let actInd=UIApplication.shared.activityHandler(style: UIActivityIndicatorViewStyle.white)
 		delay(0.5){
@@ -222,11 +223,9 @@ func _obsImplementation<T>(
 			let jsonData=try! JSONSerialization.data(withJSONObject: params ?? [:], options: .prettyPrinted)
 			req=MunicipiumAPIAlamofire
 				.upload(jsonData, to: url, method: method, headers: ["Content-type":"application/json"])
-				.uploadProgress(closure: { (prog) in
-					
-					
-					log("[\(debugCallId)] \(Timestamp()) setProgress: \(prog.completedUnitCount)/\(prog.totalUnitCount) = \(prog.fractionCompleted)",logTags+["api"],.verbose)
-					progressType?.setCompletion(CGFloat(prog.fractionCompleted))
+				.uploadProgress(closure: { (progress) in
+					if upStart==nil {upStart=Date()}
+					progressType?.setCompletion(progress:progress,start:upStart!)
 			})
 		} else {
 			req=MunicipiumAPIAlamofire
@@ -234,6 +233,10 @@ func _obsImplementation<T>(
 		}
 
 		req=req.debugLog(debugCallId:debugCallId, debugLevel:debugLevel,logTags:logTags, params:params)
+			.downloadProgress { (progress) in
+				if downStart==nil {downStart=Date()}
+				progressType?.setCompletion(progress:progress,start:downStart!)
+		}
 
 		
 		let start=Date()

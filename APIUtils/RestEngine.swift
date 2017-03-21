@@ -59,7 +59,7 @@ public protocol ArrayApi:RestApi {
 extension RestApi {
 	func makeRequest(debugCallId:Int)->Result<DataRequest>
 	{
-
+		var upStart,downStart : Date?
 		var jsonDict:[String : ApiParam]?=nil
 		if !flags.contains(.emptyBody) && method != HTTPMethod.get {
 			guard let dict=input.encode().JSONObject() as? [String:Any] else {
@@ -74,8 +74,9 @@ extension RestApi {
 			let jsonData=try! JSONSerialization.data(withJSONObject: jsonDict ?? [:], options: .prettyPrinted)
 			req=MunicipiumAPIAlamofire
 				.upload(jsonData, to: url, method: method, headers: ["Content-type":"application/json"])
-				.uploadProgress(closure: { (prog) in
-					self.progressType?.setCompletion(CGFloat(prog.fractionCompleted))
+				.uploadProgress(closure: { (progress) in
+					if upStart==nil {upStart=Date()}
+					self.progressType?.setCompletion(progress:progress,start:upStart!)
 				})
 		} else {
 			req=MunicipiumAPIAlamofire
@@ -83,9 +84,12 @@ extension RestApi {
 		}
 		
 		req=req.debugLog(debugCallId:debugCallId, debugLevel:debugLevel,logTags:logTags, params:jsonDict)
-
+			.downloadProgress { (progress) in
+				if downStart==nil {downStart=Date()}
+				self.progressType?.setCompletion(progress:progress,start:downStart!)
+		}
 		let success = Result<DataRequest>.success(req)
-
+		
 		return success
 	}
 }
