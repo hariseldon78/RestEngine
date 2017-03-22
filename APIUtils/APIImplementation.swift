@@ -24,6 +24,7 @@ public let APICallsQueue:OperationQueue={
 	opQ.qualityOfService = .userInitiated
 	return opQ
 }()
+public var randomNetworkLatencies=false
 public let APIScheduler=OperationQueueScheduler(operationQueue: APICallsQueue)
 let globalDisposeBag=DisposeBag()
 public let globalLog=LogManager()
@@ -201,7 +202,7 @@ func _obsImplementation<T>(
 	method:Alamofire.HTTPMethod,
 	url:String,
 	params:[String:ApiParam]?,
-	progressType:ProgressType?,
+	progress:APIProgress?,
 	debugLevel:APIDebugLevel,
 	logTags:[String],
 	encoding:ParameterEncoding,
@@ -212,10 +213,11 @@ func _obsImplementation<T>(
 		var upStart,downStart : Date?
 		var done=false
 		let actInd=UIApplication.shared.activityHandler(style: UIActivityIndicatorViewStyle.white)
+		let start=Date()
 		delay(0.5){
-				guard let progressType=progressType, !done else {return}
-				progressType.start()
-				log("[\(debugCallId)] \(Timestamp()) showProgress: \(progressType)",logTags+["api"],.verbose)
+				guard let progress=progress, !done else {return}
+				progress.start()
+				log("[\(debugCallId)] \(Timestamp()) showProgress: \(progress)",logTags+["api"],.verbose)
 			}
 		var req:Alamofire.DataRequest!
 		if encoding is JSONEncoding {
@@ -223,9 +225,9 @@ func _obsImplementation<T>(
 			let jsonData=try! JSONSerialization.data(withJSONObject: params ?? [:], options: .prettyPrinted)
 			req=MunicipiumAPIAlamofire
 				.upload(jsonData, to: url, method: method, headers: ["Content-type":"application/json"])
-				.uploadProgress(closure: { (progress) in
+				.uploadProgress(closure: { (prog) in
 					if upStart==nil {upStart=Date()}
-					progressType?.setCompletion(progress:progress,start:upStart!)
+					progress?.setCompletion(progress:prog,start:upStart!)
 			})
 		} else {
 			req=MunicipiumAPIAlamofire
@@ -233,31 +235,36 @@ func _obsImplementation<T>(
 		}
 
 		req=req.debugLog(debugCallId:debugCallId, debugLevel:debugLevel,logTags:logTags, params:params)
-			.downloadProgress { (progress) in
+			.downloadProgress { (prog) in
 				if downStart==nil {downStart=Date()}
-				progressType?.setCompletion(progress:progress,start:downStart!)
+				progress?.setCompletion(progress:prog,start:downStart!)
 		}
 
 		
-		let start=Date()
-		onMain {
+		let callBack={
 			f(req, observer,{ () -> () in
 				log("[\(debugCallId)]call duration: \(Date().timeIntervalSince(start))",logTags+["api"],.verbose)
 				actInd.hide()
 				done=true
-				guard let progressType=progressType else {return}
-				progressType.finish()
-				log("[\(debugCallId)] \(Timestamp()) finishProgress: \(progressType)",logTags+["api"],.verbose)
+				guard let progress=progress else {return}
+				progress.finish()
+				log("[\(debugCallId)] \(Timestamp()) finishProgress: \(progress)",logTags+["api"],.verbose)
 			})
 		}
+		if randomNetworkLatencies {
+			delay(5.0*Double(arc4random()) / Double(UINT32_MAX)){ onMain(callBack) }
+		} else {
+			onMain(callBack)
+		}
+		
 		return Disposables.create {
 			guard !done else {return}
 			done=true
 			actInd.hide()
 			req.cancel()
-			guard let progressType=progressType else {return}
-			progressType.cancel()
-			log("[\(debugCallId)] \(Timestamp()) cancelProgress: \(progressType)",logTags+["api"],.verbose)
+			guard let progress=progress else {return}
+			progress.cancel()
+			log("[\(debugCallId)] \(Timestamp()) cancelProgress: \(progress)",logTags+["api"],.verbose)
 		}
 		}.retryWhen { (errors: Observable<NSError>) in
 			return errors.scan(0) { ( a, e) in
@@ -275,11 +282,11 @@ func _obsImplementation<T>(
 }
 
 
-func createObjObservable<T>(_ params:[String:ApiParam]?,progressType:ProgressType?,debugLevel:APIDebugLevel,logTags:[String])->Observable<T> where T:ObjectWithUrl, T:Mappable
+func createObjObservable<T>(_ params:[String:ApiParam]?,progress:APIProgress?,debugLevel:APIDebugLevel,logTags:[String])->Observable<T> where T:ObjectWithUrl, T:Mappable
 {
 	let debugCallId=nextCallId
 	nextCallId+=1 // not thread safe, but it's only for debugging purpose so no worries
-	return _obsImplementation(debugCallId: debugCallId, method:T.method, url: T.url(params), params: params, progressType:progressType, debugLevel: debugLevel,logTags:logTags, encoding:T.encoding) { (req, observer, runMeAtEnd) -> () in
+	return _obsImplementation(debugCallId: debugCallId, method:T.method, url: T.url(params), params: params, progress:progress, debugLevel: debugLevel,logTags:logTags, encoding:T.encoding) { (req, observer, runMeAtEnd) -> () in
 		req.responseObject{ (response:DataResponse<T>) -> Void in
 			debug(debugCallId: debugCallId, response: response,debugLevel: debugLevel,logTags:logTags)
 			switch response.result
@@ -301,11 +308,11 @@ func createObjObservable<T>(_ params:[String:ApiParam]?,progressType:ProgressTyp
 		}
 	}
 }
-func createArrayObservableWithItemResult<T>(_ params:[String:ApiParam]?,progressType:ProgressType?,debugLevel:APIDebugLevel,logTags:[String])->Observable<T> where T:ObjectWithArrayUrl, T:Mappable
+func createArrayObservableWithItemResult<T>(_ params:[String:ApiParam]?,progress:APIProgress?,debugLevel:APIDebugLevel,logTags:[String])->Observable<T> where T:ObjectWithArrayUrl, T:Mappable
 {
 	let debugCallId=nextCallId
 	nextCallId+=1 // not thread safe, but it's only for debugging purpose so no worries
-	return _obsImplementation(debugCallId: debugCallId, method:T.method, url: T.arrayUrl(params), params: params, progressType:progressType, debugLevel: debugLevel,logTags:logTags,encoding:T.encoding) { (req, observer, runMeAtEnd) -> () in
+	return _obsImplementation(debugCallId: debugCallId, method:T.method, url: T.arrayUrl(params), params: params, progress:progress, debugLevel: debugLevel,logTags:logTags,encoding:T.encoding) { (req, observer, runMeAtEnd) -> () in
 		req.responseArray{ (response:DataResponse<[T]>) -> Void in
 			debug(debugCallId: debugCallId, response: response,debugLevel: debugLevel,logTags:logTags)
 			switch response.result
@@ -327,11 +334,11 @@ func createArrayObservableWithItemResult<T>(_ params:[String:ApiParam]?,progress
 	}
 }
 
-func createArrayObservableWithArrayResult<T>(_ params:[String:ApiParam]?,progressType:ProgressType?,debugLevel:APIDebugLevel,logTags:[String])->Observable<[T]> where T:ObjectWithArrayUrl, T:Mappable
+func createArrayObservableWithArrayResult<T>(_ params:[String:ApiParam]?,progress:APIProgress?,debugLevel:APIDebugLevel,logTags:[String])->Observable<[T]> where T:ObjectWithArrayUrl, T:Mappable
 {
 	let debugCallId=nextCallId
 	nextCallId+=1 // not thread safe, but it's only for debugging purpose so no worries
-	return _obsImplementation(debugCallId: debugCallId, method:T.method, url: T.arrayUrl(params), params: params, progressType:progressType, debugLevel: debugLevel,logTags:logTags,encoding:T.encoding) { (req, observer, runMeAtEnd) -> () in
+	return _obsImplementation(debugCallId: debugCallId, method:T.method, url: T.arrayUrl(params), params: params, progress:progress, debugLevel: debugLevel,logTags:logTags,encoding:T.encoding) { (req, observer, runMeAtEnd) -> () in
 		req.responseArray{ (response:DataResponse<[T]>) -> Void in
 			debug(debugCallId:debugCallId, response:response, debugLevel:debugLevel,logTags:logTags)
 			switch response.result

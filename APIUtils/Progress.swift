@@ -1,5 +1,5 @@
 //
-//  Progress.swift
+//  APIProgress.swift
 //  Municipium
 //
 //  Created by Roberto Previdi on 14/03/17.
@@ -54,12 +54,15 @@ public class ProgressHandler {
 		guard let nc=navCon else {return}
 		stepCompletions[id]=0
 		if isStarted {return}
-		let opacityView=UIView(frame: vc.view.frame)
-		opacityView.backgroundColor=UIColor(white: 0, alpha: 0.5)
-		opacityView.tag=9999
-		vc.view.addSubview(opacityView)
+		if opacity {
+			let opacityView=UIView(frame: vc.view.frame)
+			opacityView.backgroundColor=UIColor(white: 0, alpha: 0.5)
+			opacityView.tag=9999
+			vc.view.addSubview(opacityView)
+		}
 		nc.showProgress()
 		nc.setIndeterminate(false)
+		isStarted=true
 	}
 	func stepIsDone(_ id:Int) {
 		stepsToFinish -= 1
@@ -79,9 +82,12 @@ public class ProgressHandler {
 		let totalCompletion=stepCompletions
 			.map { (_, value) in return value }
 			.reduce(CGFloat(0), +)
+		log("total progress:\(totalCompletion)", tags: ["progress"], level: .verbose)
+
 		nc.setProgress(totalCompletion, animated: true)
 	}
 	func setStepCompletion(_ id:Int,_ v:CGFloat) {
+		
 		stepCompletions[id]=v/CGFloat(stepHandlers.count)
 		updateProgress()
 	}
@@ -90,13 +96,16 @@ public class ProgressHandler {
 		updateProgress()
 	}
 }
-
-extension ProgressType:ProgressController
-{
-	
+public class APIProgress:ProgressController{
+	var type:ProgressType
+	init(type:ProgressType){
+		self.type=type
+	}
+	var startTime:Date?
 	public func start()
 	{
-		switch self {
+		startTime=Date()
+		switch type {
 		case .indeterminate(let vc):
 			let navCon=vc.navigationController
 			navCon?.showProgress()
@@ -109,12 +118,19 @@ extension ProgressType:ProgressController
 	}
 	public func setCompletion(_ fraction:CGFloat,eta:TimeInterval)
 	{
-		print("prog: \(fraction); eta: \(eta)")
-		switch self {
+		log("prog: \(fraction); eta: \(eta)", tags: ["progress"], level: .verbose)
+		switch type {
 		case .indeterminate(let vc):
-			print("@@@@@@@@@@@@@@@@@@@@ progress indeterminate:\(fraction)")
-			_=0
+			if fraction>0.0 && eta>0.5 {
+				log("APIProgress will become determinate", tags: ["progress"], level: .verbose)
+				let ph=ProgressHandler(vc: vc, steps: 1)
+				let step=ph.stepHandlers[0]
+				type = .determinate(step:step)
+				step.start()
+				step.setCompletion(fraction,eta:eta)
+			}
 		case .determinate(let step):
+			log("set determinate progress:\(fraction)", tags: ["progress"], level: .verbose)
 			step.setCompletion(fraction,eta:eta)
 		case .none:
 			_=0
@@ -122,20 +138,23 @@ extension ProgressType:ProgressController
 	}
 	public func setCompletion(progress:Alamofire.Progress,start:Date) {
 		let fraction=progress.fractionCompleted
-		let elapsedTime=Date().timeIntervalSince(start)
+		let elapsedTime=Date().timeIntervalSince(startTime ?? start)
 		let eta=elapsedTime*(1.0-fraction)/fraction
 		setCompletion(CGFloat(fraction),eta:eta)
 
 	}
 	public func finish()
 	{
-		switch self {
+		switch type {
 		case .indeterminate(let vc):
 			let navCon=vc.navigationController
 			log("isShowingProgressBar():\(navCon?.isShowingProgressBar())", tags: ["progress"], level: .verbose)
 			navCon?.finishProgress()
 		case .determinate(let step):
-			step.finish()
+			step.setCompletion(1.0, eta: 0)
+			delay(0.2) {
+				step.finish()
+			}
 		case .none:
 			_=0
 		}
@@ -143,7 +162,7 @@ extension ProgressType:ProgressController
 	}
 	public func cancel()
 	{
-		switch self {
+		switch type {
 		case .indeterminate(let vc):
 			let navCon=vc.navigationController
 			navCon?.cancelProgress()
@@ -157,10 +176,10 @@ extension ProgressType:ProgressController
 }
 
 public extension UIViewController {
-	public var progressType:ProgressType {
+	public var progress:APIProgress {
 //		let ph=ProgressHandler(vc: self, steps: 2)
 //		return .determinate(step:ph.stepHandlers[0])
-		return .indeterminate(viewController:self)
+		return APIProgress(type: .indeterminate(viewController:self))
 	}
 	
 }

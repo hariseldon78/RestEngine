@@ -29,7 +29,7 @@ public enum RestApiFlags {
 public protocol RestApi:Tagged {
 	associatedtype In:Encodable
 	var input:In {get}
-	var progressType:ProgressType? {get}
+	var progress:APIProgress? {get}
 	var debugLevel:APIDebugLevel {get}
 	var url:String {get}
 	var method:Alamofire.HTTPMethod {get}
@@ -38,7 +38,7 @@ public protocol RestApi:Tagged {
 }
 
 public extension RestApi {
-	var progressType:ProgressType? {return nil}
+	var progress:APIProgress? {return nil}
 	var debugLevel:APIDebugLevel {return .verbose}
 	var flags:Set<RestApiFlags> {return Set<RestApiFlags>()}
 	var logTags:[String] {return ["api",Self.tag]}
@@ -76,7 +76,7 @@ extension RestApi {
 				.upload(jsonData, to: url, method: method, headers: ["Content-type":"application/json"])
 				.uploadProgress(closure: { (progress) in
 					if upStart==nil {upStart=Date()}
-					self.progressType?.setCompletion(progress:progress,start:upStart!)
+					self.progress?.setCompletion(progress:progress,start:upStart!)
 				})
 		} else {
 			req=MunicipiumAPIAlamofire
@@ -86,7 +86,7 @@ extension RestApi {
 		req=req.debugLog(debugCallId:debugCallId, debugLevel:debugLevel,logTags:logTags, params:jsonDict)
 			.downloadProgress { (progress) in
 				if downStart==nil {downStart=Date()}
-				self.progressType?.setCompletion(progress:progress,start:downStart!)
+				self.progress?.setCompletion(progress:progress,start:downStart!)
 		}
 		let success = Result<DataRequest>.success(req)
 		
@@ -106,7 +106,7 @@ public extension ObjApi {
 			var done=false
 			delay(0.5) {
 				if !done {
-					self.progressType?.start()
+					self.progress?.start()
 				}
 			}
 			let request=self.makeRequest(debugCallId:debugCallId)
@@ -120,7 +120,7 @@ public extension ObjApi {
 					log("[\(debugCallId)]call duration: \(Date().timeIntervalSince(start))",self.logTags,.verbose)
 					actInd.hide()
 					done=true
-					self.progressType?.finish()
+					self.progress?.finish()
 				}
 				guard let j = response.result.value else {
 					observer.onError(NSError(domain: "Invalid json: \(response.result.value)", code: 0, userInfo: nil))
@@ -144,7 +144,7 @@ public extension ObjApi {
 				done=true
 				actInd.hide()
 				req.cancel()
-				self.progressType?.cancel()
+				self.progress?.cancel()
 			}
 			}.retryWhen { (errors: Observable<NSError>) in
 				return errors.scan(0) { ( a, e) in
@@ -284,14 +284,14 @@ open class RestApiBase<_In,_Out> {
 	public typealias In = _In
 	public typealias Out = _Out
 	public let input:In
-	public let progressType:ProgressType?
-	public init(input:In, progressType:ProgressType?) {
+	public let progress:APIProgress?
+	public init(input:In, progress:APIProgress?) {
 		self.input=input
-		self.progressType=progressType
+		self.progress=progress
 	}
 	// default argument not working... (crash the compiler)
 	public init(input:In) {
 		self.input=input
-		self.progressType=nil
+		self.progress=nil
 	}
 }
