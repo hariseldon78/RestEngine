@@ -274,6 +274,7 @@ func _obsImplementation<T>(
 				if b >= RetryCountOnError {
 					throw e
 				}
+				progress?.setIndeterminate()
 				Thread.sleep(forTimeInterval: WaitBeforeRetry)
 				return b
 			}

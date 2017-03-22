@@ -98,10 +98,20 @@ public class ProgressHandler {
 }
 public class APIProgress:ProgressController{
 	var type:ProgressType
-	init(type:ProgressType){
+	public init(type:ProgressType){
 		self.type=type
 	}
 	var startTime:Date?
+	var vc:UIViewController? {
+		switch type {
+		case .indeterminate(let vc):
+			return vc
+		case .determinate(let step):
+			return (step as! ProgressHandler.Step).handler.vc
+		default:
+			return nil
+		}
+	}
 	public func start()
 	{
 		startTime=Date()
@@ -115,6 +125,11 @@ public class APIProgress:ProgressController{
 		case .none:
 			_=0
 		}
+	}
+	public func setIndeterminate() {
+		guard let vc=vc else {return}
+		type = .indeterminate(viewController: vc)
+		start()
 	}
 	public func setCompletion(_ fraction:CGFloat,eta:TimeInterval)
 	{
