@@ -7,10 +7,9 @@
 //
 
 import Foundation
-import M13ProgressSuite
 import DataVisualization
+import M13ProgressSuite
 import Alamofire
-
 
 extension M13ProgressView:GenericProgressBar {
 	public func setIsIndeterminate(_ indeterminate:Bool) {

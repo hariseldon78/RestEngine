@@ -19,6 +19,7 @@
 		FB7719A91E3040B300C4CB2D /* Curry.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FB7719A51E3040B300C4CB2D /* Curry.framework */; };
 		FB7719AA1E3040B300C4CB2D /* Ogra.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FB7719A61E3040B300C4CB2D /* Ogra.framework */; };
 		FB7719AB1E3040B300C4CB2D /* Runes.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FB7719A71E3040B300C4CB2D /* Runes.framework */; };
+		FB970DCA1E8C376D00C0032B /* DataVisualization.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FB970DC91E8C376D00C0032B /* DataVisualization.framework */; };
 		FBA57D721D861E7200AC2C0E /* Cache.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBA57D711D861E7200AC2C0E /* Cache.swift */; };
 		FBA7F4A51E78A87E0075B509 /* Progress.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBA7F4A41E78A87E0075B509 /* Progress.swift */; };
 		FBC308E31DF2489500E0BDE4 /* PINCache.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FBC308E21DF2489500E0BDE4 /* PINCache.framework */; };
@@ -70,6 +71,8 @@
 		FB7719A61E3040B300C4CB2D /* Ogra.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Ogra.framework; path = ../Municipium/Carthage/Build/iOS/Ogra.framework; sourceTree = "<group>"; };
 		FB7719A71E3040B300C4CB2D /* Runes.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Runes.framework; path = ../Municipium/Carthage/Build/iOS/Runes.framework; sourceTree = "<group>"; };
 		FB7A488D1E7010FD0029D1E0 /* Cartography.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cartography.framework; path = "../Municipium-App-iOS/Build/Products/testsDebug-iphonesimulator/Cartography.framework"; sourceTree = "<group>"; };
+		FB970DBA1E8C197F00C0032B /* DataVisualization.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = DataVisualization.framework; path = "../Municipium-App-iOS/Build/Products/Release-iphonesimulator/DataVisualization.framework"; sourceTree = "<group>"; };
+		FB970DC91E8C376D00C0032B /* DataVisualization.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = DataVisualization.framework; path = "../Municipium-App-iOS/Build/Products/testsDebug-iphonesimulator/DataVisualization.framework"; sourceTree = "<group>"; };
 		FBA57D711D861E7200AC2C0E /* Cache.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Cache.swift; sourceTree = "<group>"; };
 		FBA7F4A41E78A87E0075B509 /* Progress.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Progress.swift; sourceTree = "<group>"; };
 		FBC308E21DF2489500E0BDE4 /* PINCache.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = PINCache.framework; path = ../Municipium/Carthage/Build/iOS/PINCache.framework; sourceTree = "<group>"; };
@@ -86,6 +89,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FB970DCA1E8C376D00C0032B /* DataVisualization.framework in Frameworks */,
 				FB21EFC01E7175330026105D /* M13ProgressSuite.framework in Frameworks */,
 				FB7719A81E3040B300C4CB2D /* Argo.framework in Frameworks */,
 				FB7719A91E3040B300C4CB2D /* Curry.framework in Frameworks */,
@@ -127,6 +131,8 @@
 		FB26642D1DD9C0320008B7D7 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				FB970DC91E8C376D00C0032B /* DataVisualization.framework */,
+				FB970DBA1E8C197F00C0032B /* DataVisualization.framework */,
 				FB21EFBF1E7175330026105D /* M13ProgressSuite.framework */,
 				FB7A488D1E7010FD0029D1E0 /* Cartography.framework */,
 				FB7719A41E3040B300C4CB2D /* Argo.framework */,
@@ -390,7 +396,7 @@
 		FB14D32C1D08497C00F09DE1 /* tests */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CARTHAGE_DIR = "$(PROJECT_DIR)/../Municipium-App-iOS/Municipium/Carthage";
+				CARTHAGE_DIR = "$(MAIN_PROJECT_DIR)/Municipium/Carthage";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				DEFINES_MODULE = YES;
@@ -398,10 +404,15 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(CARTHAGE_DIR)/Build/iOS/",
+					"$(PODS_CONFIGURATION_BUILD_DIR)",
+				);
 				INFOPLIST_FILE = APIUtils/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				IPHONEOS_DEPLOYMENT_TARGET = 9.3;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				MAIN_PROJECT_DIR = "/Users/robertoprevidi/Developer/slowmedia/Municipium/Municipium-App-iOS";
 				PODS_CONFIGURATION_BUILD_DIR = "$PODS_BUILD_DIR/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME) ";
 				PRODUCT_BUNDLE_IDENTIFIER = it.roby.APIUtils;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -531,7 +542,7 @@
 		FB5CE98E1BF3F99500ACD6CF /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CARTHAGE_DIR = "$(PROJECT_DIR)/../Municipium-App-iOS/Municipium/Carthage";
+				CARTHAGE_DIR = "$(MAIN_PROJECT_DIR)/Municipium/Carthage";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				DEFINES_MODULE = YES;
@@ -539,10 +550,15 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(CARTHAGE_DIR)/Build/iOS/",
+					"$(PODS_CONFIGURATION_BUILD_DIR)",
+				);
 				INFOPLIST_FILE = APIUtils/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				IPHONEOS_DEPLOYMENT_TARGET = 9.3;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				MAIN_PROJECT_DIR = "/Users/robertoprevidi/Developer/slowmedia/Municipium/Municipium-App-iOS";
 				PODS_CONFIGURATION_BUILD_DIR = "$PODS_BUILD_DIR/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME) ";
 				PRODUCT_BUNDLE_IDENTIFIER = it.roby.APIUtils;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -555,7 +571,7 @@
 		FB5CE98F1BF3F99500ACD6CF /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CARTHAGE_DIR = "$(PROJECT_DIR)/../Municipium-App-iOS/Municipium/Carthage";
+				CARTHAGE_DIR = "$(MAIN_PROJECT_DIR)/Municipium/Carthage";
 				CODE_SIGN_IDENTITY = "iPhone Distribution";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
 				DEFINES_MODULE = YES;
@@ -563,10 +579,15 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(CARTHAGE_DIR)/Build/iOS/",
+					"$(PODS_CONFIGURATION_BUILD_DIR)",
+				);
 				INFOPLIST_FILE = APIUtils/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				IPHONEOS_DEPLOYMENT_TARGET = 9.3;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				MAIN_PROJECT_DIR = "/Users/robertoprevidi/Developer/slowmedia/Municipium/Municipium-App-iOS";
 				PODS_CONFIGURATION_BUILD_DIR = "$PODS_BUILD_DIR/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME) ";
 				PRODUCT_BUNDLE_IDENTIFIER = it.roby.APIUtils;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -651,7 +672,7 @@
 		FBAC87E81D10A76600C1ADEE /* testsDebug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CARTHAGE_DIR = "$(PROJECT_DIR)/../Municipium-App-iOS/Municipium/Carthage";
+				CARTHAGE_DIR = "$(MAIN_PROJECT_DIR)/Municipium/Carthage";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				DEFINES_MODULE = YES;
@@ -659,10 +680,15 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(CARTHAGE_DIR)/Build/iOS/",
+					"$(PODS_CONFIGURATION_BUILD_DIR)",
+				);
 				INFOPLIST_FILE = APIUtils/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				IPHONEOS_DEPLOYMENT_TARGET = 9.3;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				MAIN_PROJECT_DIR = "/Users/robertoprevidi/Developer/slowmedia/Municipium/Municipium-App-iOS";
 				PODS_CONFIGURATION_BUILD_DIR = "$PODS_BUILD_DIR/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME) ";
 				PRODUCT_BUNDLE_IDENTIFIER = it.roby.APIUtils;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -737,7 +763,7 @@
 		FBFD8DF71DE691D10032CE31 /* impersonation */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CARTHAGE_DIR = "$(PROJECT_DIR)/../Municipium-App-iOS/Municipium/Carthage";
+				CARTHAGE_DIR = "$(MAIN_PROJECT_DIR)/Municipium/Carthage";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				DEFINES_MODULE = YES;
@@ -745,10 +771,15 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(CARTHAGE_DIR)/Build/iOS/",
+					"$(PODS_CONFIGURATION_BUILD_DIR)",
+				);
 				INFOPLIST_FILE = APIUtils/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				IPHONEOS_DEPLOYMENT_TARGET = 9.3;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				MAIN_PROJECT_DIR = "/Users/robertoprevidi/Developer/slowmedia/Municipium/Municipium-App-iOS";
 				PODS_CONFIGURATION_BUILD_DIR = "$PODS_BUILD_DIR/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME) ";
 				PRODUCT_BUNDLE_IDENTIFIER = it.roby.APIUtils;
 				PRODUCT_NAME = "$(TARGET_NAME)";

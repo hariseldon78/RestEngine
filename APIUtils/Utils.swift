@@ -6,7 +6,7 @@
 //  Copyright © 2017 roby. All rights reserved.
 //
 
-import Foundation
+import UIKit
 import Alamofire
 import RxSwift
 import AlamofireImage
