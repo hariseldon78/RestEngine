@@ -57,6 +57,7 @@ extension ProgressBarLocation:GenericProgressBar {
 	public func hide() {
 		switch self {
 		case .inNavBar(let vc):
+			print(vc.navigationController)
 			vc.navigationController?.finishProgress()
 		case .inProgressBar(let pb):
 			pb.hide()
@@ -65,6 +66,7 @@ extension ProgressBarLocation:GenericProgressBar {
 	public func cancel() {
 		switch self {
 		case .inNavBar(let vc):
+			print(vc.navigationController)
 			vc.navigationController?.cancelProgress()
 		case .inProgressBar(let pb):
 			pb.cancel()

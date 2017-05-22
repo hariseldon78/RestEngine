@@ -290,13 +290,15 @@ func createObjObservable<T>(_ params:[String:ApiParam]?,progress:APIProgress?,de
 	return _obsImplementation(debugCallId: debugCallId, method:T.method, url: T.url(params), params: params, progress:progress, debugLevel: debugLevel,logTags:logTags, encoding:T.encoding) { (req, observer, runMeAtEnd) -> () in
 		req.responseObject{ (response:DataResponse<T>) -> Void in
 			debug(debugCallId: debugCallId, response: response,debugLevel: debugLevel,logTags:logTags)
+			var needComplete=false
 			switch response.result
 			{
 			case .success(let obj) where obj.prepareFluent(params).isValid():
 				logDump(obj,name:"[\(debugCallId)]obj",logTags+["api"],.debug)
 				
 				observer.on(.next(obj))
-				observer.on(.completed)
+				needComplete=true
+
 			case .success(let obj): // risposta leggibile ma non "valid": il server ha dato un errore.
 				observer.on(.error(NSError(domain: "Invalid response", code: -1, userInfo: ["obj":obj])))
 			case .failure(let error): // significa che l'object mapping non ha funzionato
@@ -306,6 +308,9 @@ func createObjObservable<T>(_ params:[String:ApiParam]?,progress:APIProgress?,de
 				
 			}
 			runMeAtEnd()
+			if needComplete {
+				observer.on(.completed)
+			}
 		}
 	}
 }
