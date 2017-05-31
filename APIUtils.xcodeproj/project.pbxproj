@@ -19,6 +19,7 @@
 		FB7719A91E3040B300C4CB2D /* Curry.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FB7719A51E3040B300C4CB2D /* Curry.framework */; };
 		FB7719AA1E3040B300C4CB2D /* Ogra.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FB7719A61E3040B300C4CB2D /* Ogra.framework */; };
 		FB7719AB1E3040B300C4CB2D /* Runes.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FB7719A71E3040B300C4CB2D /* Runes.framework */; };
+		FB856B141EDEBA80009E18B8 /* Reachability.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FB856B131EDEBA80009E18B8 /* Reachability.framework */; };
 		FB970DCA1E8C376D00C0032B /* DataVisualization.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FB970DC91E8C376D00C0032B /* DataVisualization.framework */; };
 		FBA57D721D861E7200AC2C0E /* Cache.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBA57D711D861E7200AC2C0E /* Cache.swift */; };
 		FBA7F4A51E78A87E0075B509 /* Progress.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBA7F4A41E78A87E0075B509 /* Progress.swift */; };
@@ -71,6 +72,7 @@
 		FB7719A61E3040B300C4CB2D /* Ogra.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Ogra.framework; path = ../Municipium/Carthage/Build/iOS/Ogra.framework; sourceTree = "<group>"; };
 		FB7719A71E3040B300C4CB2D /* Runes.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Runes.framework; path = ../Municipium/Carthage/Build/iOS/Runes.framework; sourceTree = "<group>"; };
 		FB7A488D1E7010FD0029D1E0 /* Cartography.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cartography.framework; path = "../Municipium-App-iOS/Build/Products/testsDebug-iphonesimulator/Cartography.framework"; sourceTree = "<group>"; };
+		FB856B131EDEBA80009E18B8 /* Reachability.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Reachability.framework; path = "../Municipium-App-iOS/Municipium/Carthage/Build/iOS/Reachability.framework"; sourceTree = "<group>"; };
 		FB970DBA1E8C197F00C0032B /* DataVisualization.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = DataVisualization.framework; path = "../Municipium-App-iOS/Build/Products/Release-iphonesimulator/DataVisualization.framework"; sourceTree = "<group>"; };
 		FB970DC91E8C376D00C0032B /* DataVisualization.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = DataVisualization.framework; path = "../Municipium-App-iOS/Build/Products/testsDebug-iphonesimulator/DataVisualization.framework"; sourceTree = "<group>"; };
 		FBA57D711D861E7200AC2C0E /* Cache.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Cache.swift; sourceTree = "<group>"; };
@@ -89,6 +91,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FB856B141EDEBA80009E18B8 /* Reachability.framework in Frameworks */,
 				FB970DCA1E8C376D00C0032B /* DataVisualization.framework in Frameworks */,
 				FB21EFC01E7175330026105D /* M13ProgressSuite.framework in Frameworks */,
 				FB7719A81E3040B300C4CB2D /* Argo.framework in Frameworks */,
@@ -131,6 +134,7 @@
 		FB26642D1DD9C0320008B7D7 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				FB856B131EDEBA80009E18B8 /* Reachability.framework */,
 				FB970DC91E8C376D00C0032B /* DataVisualization.framework */,
 				FB970DBA1E8C197F00C0032B /* DataVisualization.framework */,
 				FB21EFBF1E7175330026105D /* M13ProgressSuite.framework */,

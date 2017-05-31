@@ -15,7 +15,7 @@ import AlamofireObjectMapper
 import Cartography
 import DataVisualization
 import M13ProgressSuite
-//import PromiseKit
+import Reachability.swift
 
 let RetryCountOnError=3
 let WaitBeforeRetry=0.3
@@ -29,7 +29,7 @@ public var simulateNoConnection=false
 public let APIScheduler=OperationQueueScheduler(operationQueue: APICallsQueue)
 let globalDisposeBag=DisposeBag()
 public let globalLog=LogManager()
-
+let reachability=
 public func log(_ message:String,_ tags:[String]) {
 	globalLog.log(message,tags)
 }

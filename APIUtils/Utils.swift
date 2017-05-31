@@ -43,3 +43,34 @@ extension UIImage {
 		})
 	}
 }
+
+public final class PriorityObservable<Element>: Cancelable {
+	let source = PublishSubject<(prio:Int,value:Element)>()
+	let currentBest = BehaviorSubject<(Int,Element?)>(value: (-1,nil))
+	public var isDisposed: Bool { return source.isDisposed || currentBest.isDisposed }
+	public func dispose() {
+		source.dispose()
+		currentBest.dispose()
+		sourceSubscription?.dispose()
+	}
+	func onNext(prio:UInt,value:Element) {
+		source.onNext((prio:Int(prio),value:value))
+	}
+	func asObservable() -> Observable<Element> {
+		return currentBest.filter{$0.0 > -1}.map{$0.1!}
+	}
+	func subscribe<O>(_ observer: O) -> Disposable where O : ObserverType, O.E == Element {
+		return asObservable().subscribe(observer)
+	}
+	var sourceSubscription:Disposable?=nil
+	init() {
+		sourceSubscription=source.filter({ (prio,_) -> Bool in
+			guard let current=try? self.currentBest.value() else {return false}
+			let isHigherPriority = prio > -1 && prio>=current.0
+			return isHigherPriority
+		}).subscribe(onNext:{ (prio,v) in
+			self.currentBest.onNext((prio, v))
+		})
+	}
+}
+

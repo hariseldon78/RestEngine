@@ -14,6 +14,8 @@ import AlamofireObjectMapper
 //import PromiseKit
 import DataVisualization
 import SwiftDate
+
+
 let API_SHARE_REPLAY_BUFFER=100
 
 func assertMain() {
@@ -164,6 +166,20 @@ public indirect enum Expiry {
 		}
 	}
 	
+	func isFresh(cachingDate:Date) -> Bool
+	{
+		return self.updatePriority(cachingDate: cachingDate)<0.05
+	}
+	func age(cachingDate:Date) -> CacheAge
+	{
+		if isExpired(cachingDate: cachingDate) {
+			return .expired
+		} else if isFresh(cachingDate: cachingDate) {
+			return .fresh
+		} else {
+			return .old
+		}
+	}
 	func updatePriority(cachingDate:Date)->Double {
 		switch self {
 		case .hours(let h):
@@ -344,13 +360,13 @@ public protocol APIProtocol
 {
 	associatedtype MappableType
 	associatedtype ApiOutputType
-	func asObservable(_ params:[String:ApiParam]?,progress:APIProgress?)->Observable<MappableType>
+//	func asObservable(_ params:[String:ApiParam]?,progress:APIProgress?)->Observable<MappableType>
 }
 public protocol CachableAPIProtocol: APIProtocol
 {
 	associatedtype Cachable : CachableEntity
 	func preload(_ params:[String:ApiParam]?,onQueue:OperationQueue)
-	func cached(_ params:[String:ApiParam]?)->ApiOutputType?
+//	func visitCache(_ params:[String:ApiParam]?,output:PriorityObservable<ApiOutputType>)
 	func invalidateCache(_ params:[String:ApiParam]?)
 }
 public extension CachableAPIProtocol
@@ -367,7 +383,11 @@ public protocol CommandAPIProtocol
 	associatedtype SubjectType
 	func asObservable(_ obj:SubjectType,progress:APIProgress?)->Observable<MappableType>
 }
-
+enum CacheAge:String{
+	case fresh
+	case old
+	case expired
+}
 open class APICommon
 {
 	public init(){}
@@ -402,7 +422,8 @@ open class APICommon
 		self.debugLevel=debugLevel
 		return self
 	}
-	fileprivate func _cachedImpl<Cachable,Result>(_ params:[String:ApiParam]?,_:Cachable.Type,_:Result.Type,logTags:[String])->Cachable.OutputType? where Cachable:CachableEntity,Result:APISubject
+	
+	fileprivate func _cachedImpl<Cachable,Result>(_ params:[String:ApiParam]?,_:Cachable.Type,_:Result.Type,logTags:[String])->(Cachable.OutputType,CacheAge)? where Cachable:CachableEntity,Result:APISubject
 	{
 //		dump(params)
 		guard let old=apiCache.get(Cachable.key(params)) as? Cachable,
@@ -411,25 +432,7 @@ open class APICommon
 				log("no \(Cachable.key(params)) in cache",logTags+["api"],debugLevel)
 				return nil
 		}
-		if !Result.expiry.isExpired(cachingDate:date)
-		{
-			log("found \(Cachable.key(params)) in cache",logTags+["api"],debugLevel)
-			debugLevel.ifAtLeast(.verbose) {
-				logDump(old,name:"oldCached","api",.verbose)
-			}
-			CacheUpdater.instance.addCacheUpdateOperation(
-				Cachable.key(params),
-				priority: Result.expiry.updatePriority(cachingDate:date)
-				) { (queue)->Void in
-					self.preload(params,onQueue:queue)
-			}
-			return old.obj
-		}
-		else
-		{
-			log("found \(Cachable.key(params)) in cache but it's too old",logTags+["api"],debugLevel)
-			return nil
-		}
+		return (old.obj,Result.expiry.age(cachingDate: date))
 	}
 }
 public final class ArrayAPI<Result> : APICommon,CachableAPIProtocol where Result:ObjectWithArrayUrl, Result:APISubject
@@ -453,59 +456,56 @@ public final class ArrayAPI<Result> : APICommon,CachableAPIProtocol where Result
 				apiCache.set(Cachable(obj:array), forKey: key)
 			}).addDisposableTo(globalDisposeBag)
 	}
-	public func cached(_ params:[String:ApiParam]?=nil)->[Result]?
+	func visitCache(_ params:[String:ApiParam]?=nil,output:PriorityObservable<[Result]>)->CacheAge?
 	{
 		var allParams=params ?? [:]
 		integrateParams(&allParams, automaticParams: Result.automaticParams)
 		checkParams(allParams, mandatoryParams: Result.mandatoryParams)
-		return _cachedImpl(allParams, Cachable.self, Result.self,logTags:[Result.tag])
+		if let (cached,age)=_cachedImpl(allParams, Cachable.self, Result.self,logTags:[Result.tag]) {
+			log("found \(Cachable.key(params)). It's \(age.rawValue)",[Result.tag,"api"],debugLevel)
+			output.onNext(prio:0,value:cached)
+			return age
+		}
+		return nil
 	}
 	
-	public func asObservable(_ params:[String:ApiParam]?=nil,progress:APIProgress?=nil) -> Observable<Result> {
-		var allParams=params ?? [:]
-		integrateParams(&allParams, automaticParams: Result.automaticParams)
-		checkParams(allParams, mandatoryParams: Result.mandatoryParams)
-		if let cached=cached(allParams)
-		{
-			return Observable.from(cached)
-		}
-		else
-		{
-			var cacheBuffer=[Result]()
-			let obs:Observable<Result>=createArrayObservableWithItemResult(allParams,progress:progress, debugLevel: debugLevel,logTags:[Result.tag]).shareReplay(API_SHARE_REPLAY_BUFFER).subscribeOn(APIScheduler)
-			obs.subscribe(onNext: { (e:Result) -> Void in
-				cacheBuffer.append(e)
-				}, onError: nil,
-				onCompleted: { () -> Void in
-					let key=Cachable.key(allParams)
-					apiCache.set(Cachable(obj:cacheBuffer), forKey: key)
-				}, onDisposed:nil).addDisposableTo(globalDisposeBag)
-			return obs
-		}
-	}
+//	public func asObservable(_ params:[String:ApiParam]?=nil,progress:APIProgress?=nil) -> Observable<Result> {
+//		var allParams=params ?? [:]
+//		integrateParams(&allParams, automaticParams: Result.automaticParams)
+//		checkParams(allParams, mandatoryParams: Result.mandatoryParams)
+//		let output=PriorityObservable<Result>()
+//		visitCache(allParams,output:output)
+//
+//		var cacheBuffer=[Result]()
+//		let obs:Observable<Result>=createArrayObservableWithItemResult(allParams,progress:progress, debugLevel: debugLevel,logTags:[Result.tag]).shareReplay(API_SHARE_REPLAY_BUFFER).subscribeOn(APIScheduler)
+//		obs.subscribe(onNext: { (e:Result) -> Void in
+//			cacheBuffer.append(e)
+//		}, onError: nil,
+//		   onCompleted: { () -> Void in
+//			let key=Cachable.key(allParams)
+//			apiCache.set(Cachable(obj:cacheBuffer), forKey: key)
+//			output.onNext(prio: 1, value: cach)
+//		}, onDisposed:nil).addDisposableTo(globalDisposeBag)
+//		return obs
+//	}
 	
 	public func asObservableArray(_ params:[String:ApiParam]?=nil,progress:APIProgress?=nil) -> Observable<[Result]> {
 		var allParams=params ?? [:]
 		integrateParams(&allParams, automaticParams: Result.automaticParams)
 		checkParams(allParams, mandatoryParams: Result.mandatoryParams)
-		if let cached=cached(allParams)
-		{
-			return Observable.create{ (obs) -> Disposable in
-				obs.on(.next(cached))
-				obs.on(.completed)
-				return Disposables.create {}
-			}
-		}
-		else
-		{
+		let output=PriorityObservable<[Result]>()
+		let cacheAge=visitCache(allParams,output:output)
+		if cacheAge != .fresh {
 			let obs:Observable<[Result]>=createArrayObservableWithArrayResult(allParams,progress:progress,debugLevel: debugLevel,logTags:[Result.tag]).shareReplay(API_SHARE_REPLAY_BUFFER).subscribeOn(APIScheduler)
 			obs.subscribe(onNext: { (array:[Result]) -> Void in
 				let key=Cachable.key(allParams)
 				apiCache.set(Cachable(obj:array), forKey: key)
-				}, onError: nil, onCompleted: nil, onDisposed: nil)
+				output.onNext(prio: 1, value: array)
+			}, onError: nil, onCompleted: nil, onDisposed: nil)
 				.addDisposableTo(globalDisposeBag)
-			return obs
 		}
+		return output.asObservable()
+		
 	}
 	
 }
@@ -528,32 +528,33 @@ public final class ObjectAPI<Result>: APICommon,CachableAPIProtocol where Result
 			apiCache.set(Cachable(obj:object), forKey: Cachable.key(allParams))
 			}).addDisposableTo(globalDisposeBag)
 	}
-	public func visitCache(_ params:[String:ApiParam]?=nil,output:PublishSubject<Result>)
+	func visitCache(_ params:[String:ApiParam]?=nil,output:PriorityObservable<Result>)->CacheAge?
 	{
 		var allParams=params ?? [:]
 		integrateParams(&allParams, automaticParams: Result.automaticParams)
 		checkParams(allParams, mandatoryParams: Result.mandatoryParams)
-		_cachedImpl(allParams, Cachable.self, Result.self,logTags:[Result.tag])
+		if let (cached,age)=_cachedImpl(allParams, Cachable.self, Result.self,logTags:[Result.tag]) {
+			log("found \(Cachable.key(params)). It's \(age.rawValue)",[Result.tag,"api"],debugLevel)
+			output.onNext(prio:0,value:cached)
+			return age
+		}
+		return nil
 	}
 	public func asObservable(_ params:[String:ApiParam]?=nil,progress:APIProgress?=nil) -> Observable<Result> {
 		var allParams=params ?? [:]
 		integrateParams(&allParams, automaticParams: Result.automaticParams)
 		checkParams(allParams, mandatoryParams: Result.mandatoryParams)
-		let output=PublishSubject<Result>()
+		let output=PriorityObservable<Result>()
 		visitCache(allParams,output:output)
-//		if let cached=cached(allParams)
-//		{
-//			return Observable.from([cached])
-//		}
-//		else
-//		{
-			let obs:Observable<Result>=createObjObservable(allParams,progress:progress, debugLevel: debugLevel,logTags:[Result.tag]).shareReplay(API_SHARE_REPLAY_BUFFER).subscribeOn(APIScheduler)
-			obs.subscribe(onNext:{ (e:Result) -> Void in
-				let key=Cachable.key(allParams)
-				apiCache.set(Cachable(obj:e), forKey: key)
-				}).addDisposableTo(globalDisposeBag)
-			return obs
-//		}
+		
+		let obs:Observable<Result>=createObjObservable(allParams,progress:progress, debugLevel: debugLevel,logTags:[Result.tag]).shareReplay(API_SHARE_REPLAY_BUFFER).subscribeOn(APIScheduler)
+		obs.subscribe(onNext:{ (e:Result) -> Void in
+			let key=Cachable.key(allParams)
+			apiCache.set(Cachable(obj:e), forKey: key)
+			output.onNext(prio:1,value:e)
+		}).addDisposableTo(globalDisposeBag)
+		output.currentBest.subscribe(onNext:{print("currentBest:\($0)")})
+		return output.asObservable()
 	}
 }
 open class APICallBase
