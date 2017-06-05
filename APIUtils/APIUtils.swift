@@ -442,13 +442,11 @@ public final class ArrayAPI<Result> : APICommon,CachableAPIProtocol where Result
 	
 	public override func preload(_ params:[String:ApiParam]?=nil,onQueue:OperationQueue=APICallsQueue)
 	{
-		log("starting preload task for \(Cachable.key(params))",[Result.tag]+["api"],debugLevel)
 		var allParams=params ?? [:]
 		integrateParams(&allParams, automaticParams: Result.automaticParams)
 		checkParams(allParams, mandatoryParams: Result.mandatoryParams)
 		createArrayObservableWithArrayResult(allParams, progress:nil, debugLevel: debugLevel,logTags:[Result.tag])
 			.subscribe(onNext: { (array:[Result]) -> Void in
-				log("preloaded \(Cachable.key(params))",[Result.tag]+["api"],self.debugLevel)
 				let key=Cachable.key(allParams)
 				apiCache.set(Cachable(obj:array), forKey: key)
 			}).addDisposableTo(globalDisposeBag)
@@ -528,32 +526,30 @@ public final class ObjectAPI<Result>: APICommon,CachableAPIProtocol where Result
 			apiCache.set(Cachable(obj:object), forKey: Cachable.key(allParams))
 			}).addDisposableTo(globalDisposeBag)
 	}
-	public func visitCache(_ params:[String:ApiParam]?=nil,output:PublishSubject<Result>)
+	public func cached(_ params:[String:ApiParam]?=nil)->Result?
 	{
 		var allParams=params ?? [:]
 		integrateParams(&allParams, automaticParams: Result.automaticParams)
 		checkParams(allParams, mandatoryParams: Result.mandatoryParams)
-		_cachedImpl(allParams, Cachable.self, Result.self,logTags:[Result.tag])
+		return _cachedImpl(allParams, Cachable.self, Result.self,logTags:[Result.tag])
 	}
 	public func asObservable(_ params:[String:ApiParam]?=nil,progress:APIProgress?=nil) -> Observable<Result> {
 		var allParams=params ?? [:]
 		integrateParams(&allParams, automaticParams: Result.automaticParams)
 		checkParams(allParams, mandatoryParams: Result.mandatoryParams)
-		let output=PublishSubject<Result>()
-		visitCache(allParams,output:output)
-//		if let cached=cached(allParams)
-//		{
-//			return Observable.from([cached])
-//		}
-//		else
-//		{
+		if let cached=cached(allParams)
+		{
+			return Observable.from([cached])
+		}
+		else
+		{
 			let obs:Observable<Result>=createObjObservable(allParams,progress:progress, debugLevel: debugLevel,logTags:[Result.tag]).shareReplay(API_SHARE_REPLAY_BUFFER).subscribeOn(APIScheduler)
 			obs.subscribe(onNext:{ (e:Result) -> Void in
 				let key=Cachable.key(allParams)
 				apiCache.set(Cachable(obj:e), forKey: key)
 				}).addDisposableTo(globalDisposeBag)
 			return obs
-//		}
+		}
 	}
 }
 open class APICallBase
