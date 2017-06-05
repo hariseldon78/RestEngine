@@ -25,6 +25,7 @@ public let APICallsQueue:OperationQueue={
 	return opQ
 }()
 public var randomNetworkLatencies=false
+public var simulateNoConnection=false
 public let APIScheduler=OperationQueueScheduler(operationQueue: APICallsQueue)
 let globalDisposeBag=DisposeBag()
 public let globalLog=LogManager()
@@ -240,18 +241,21 @@ func _obsImplementation<T>(
 				progress?.setCompletion(progress:prog,start:downStart!)
 		}
 
-		
-		let callBack={
-			f(req, observer,{ () -> () in
+		let atEnd={ () -> () in
 				log("[\(debugCallId)]call duration: \(Date().timeIntervalSince(start))",logTags+["api"],.verbose)
 				actInd.hide()
 				done=true
 				guard let progress=progress else {return}
 				progress.finish()
 				log("[\(debugCallId)] \(Timestamp()) finishProgress: \(progress)",logTags+["api"],.verbose)
-			})
 		}
-		if randomNetworkLatencies {
+		let callBack={
+			f(req, observer,atEnd)
+		}
+		if simulateNoConnection {
+			observer.on(.error(NSError(domain: "No connection", code: 0, userInfo: nil)))
+			atEnd()
+		} else if randomNetworkLatencies {
 			delay(5.0*Double(arc4random()) / Double(UINT32_MAX)){ onMain(callBack) }
 		} else {
 			onMain(callBack)
