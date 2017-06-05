@@ -15,7 +15,7 @@ import AlamofireObjectMapper
 import Cartography
 import DataVisualization
 import M13ProgressSuite
-import Reachability.swift
+import Reachability
 
 let RetryCountOnError=3
 let WaitBeforeRetry=0.3
@@ -29,7 +29,23 @@ public var simulateNoConnection=false
 public let APIScheduler=OperationQueueScheduler(operationQueue: APICallsQueue)
 let globalDisposeBag=DisposeBag()
 public let globalLog=LogManager()
-let reachability=
+public let rxReachability=Variable<Reachability.NetworkStatus>(.notReachable)
+let reachability:Reachability={
+	guard let r=Reachability(hostname:"http://municipiumapp.it") else { fatalError() }
+	NotificationCenter.default.rx.notification(ReachabilityChangedNotification)
+		.subscribe(onNext:{notif in
+		guard let r=notif.object as? Reachability else {return}
+		rxReachability.value=r.currentReachabilityStatus
+	}).addDisposableTo(globalDisposeBag)
+	try! r.startNotifier()
+	return r
+}()
+
+
+public extension Reachability.NetworkStatus {
+	public var online:Bool { return self != .notReachable }
+}
+
 public func log(_ message:String,_ tags:[String]) {
 	globalLog.log(message,tags)
 }
@@ -78,6 +94,7 @@ func +<T>(a:Array<T>,b:Array<T>)->Array<T> {
 }
 
 public struct ApiNetworkRequest:Mappable {
+	public var method=""
 	public var tag=""
 	public var baseUrl=""
 	public var params=[(String,ApiParam)]() {
@@ -89,17 +106,18 @@ public struct ApiNetworkRequest:Mappable {
 		return params.map { $0.0+"="+String(describing: $0.1) }.joined(separator:"&")
 	}
 	public init?(map:Map) {}
-	public init(tag:String,baseUrl:String,params:[String:ApiParam]?) {
+	public init(tag:String,baseUrl:String,params:[String:ApiParam]?,method:Alamofire.HTTPMethod) {
 		self.tag=tag
+		self.method=method.rawValue
 		self.baseUrl=baseUrl
 		self.params=(params ?? [String:ApiParam]()).sorted { $0.0 < $1.0 }
 	}
 	public mutating func mapping(map:Map) {
+		method 	<- map["method"]
 		tag 	<- map["tag"]
 		baseUrl	<- map["baseUrl"]
 		var ps=paramsString
 		ps 		<- map["params"]
-		
 	}
 }
 
@@ -253,7 +271,7 @@ func _obsImplementation<T>(
 			f(req, observer,atEnd)
 		}
 		if simulateNoConnection {
-			observer.on(.error(NSError(domain: "No connection", code: 0, userInfo: nil)))
+			observer.on(.error(NSError(domain: "No connection (SIMULATION)", code: 0, userInfo: nil)))
 			atEnd()
 		} else if randomNetworkLatencies {
 			delay(5.0*Double(arc4random()) / Double(UINT32_MAX)){ onMain(callBack) }

@@ -18,6 +18,34 @@ import DataVisualization
 
 /////////////////////
 ////////////////////////
+public enum Cachability {
+	case never
+	case cache(expiry:Expiry)
+}
+
+public class CachableCreatable<T>:CachableBase where T:Creatable {
+
+	public required init?(coder aDecoder: NSCoder) {
+		cacheDate=aDecoder.decodeObject(forKey: "date") as! Date?
+		if let s=aDecoder.decodeObject(forKey: "obj") as? String,
+			let data=s.data(using: String.Encoding.utf8),
+			let JSON = JSONObjectWithData(fromData: data),
+			let tmp=T.create(fromJSON:JSON)
+		{
+			obj=tmp
+			super.init(coder: aDecoder)
+			return
+		}
+		return nil
+	}
+	open override func encode(with aCoder: NSCoder) {
+		
+	}
+	open var obj:T
+	open var cacheDate:Date?
+
+}
+public let restApiCache=Cache<ApiNetworkRequest,CachableBase>(name:"restApiCache")
 public func JSONObjectWithData(fromData data: Data) -> Any? {
 	return try? JSONSerialization.jsonObject(with: data, options: [])
 }
@@ -35,6 +63,7 @@ public protocol RestApi:Tagged {
 	var method:Alamofire.HTTPMethod {get}
 	var encoding:Alamofire.ParameterEncoding {get}
 	var flags:Set<RestApiFlags> {get}
+	var cachability:Cachability {get}
 }
 
 public extension RestApi {
@@ -49,6 +78,8 @@ public extension RestApi {
 			return JSONEncoding()
 		}
 	}
+	var cachability:Cachability {return .never}
+
 }
 public protocol ObjApi:RestApi {
 	associatedtype Out:Creatable
@@ -57,6 +88,17 @@ public protocol ArrayApi:RestApi {
 	associatedtype Out:Arrayable
 }
 extension RestApi {
+	
+	func cacheKey()->ApiNetworkRequest
+	{
+		var jsonDict:[String : ApiParam]?=nil
+		if !flags.contains(.emptyBody) && method != HTTPMethod.get {
+			if let dict=input.encode().JSONObject() as? [String:Any]{
+				jsonDict=dict.typeConstrain()
+			}
+		}
+		return ApiNetworkRequest(tag: Self.tag, baseUrl: self.url, params: jsonDict, method:self.method)
+	}
 	func makeRequest(debugCallId:Int)->Result<DataRequest>
 	{
 		var upStart,downStart : Date?
@@ -99,6 +141,16 @@ public extension ObjApi {
 	{
 		let debugCallId=nextCallId
 		nextCallId+=1
+		
+		let output=PriorityObservable<Out>()
+
+		switch self.cachability {
+		case .cache(let expiry):
+			_=0
+//			guard let old=apiCache.get(cacheKey()) as? C
+		case .never:
+			_=0
+		}
 		
 		return Observable.create{ (observer) -> Disposable in
 			let start=Date()
@@ -221,18 +273,23 @@ public extension ArrayApi {
 		}
 	}
 }
-public protocol Creatable:Decodable {
+public protocol Creatable:Decodable,Encodable {
 	static func create(fromData:Data)->Self?
+	static func create(fromJSON:Any)->Self?
 	static func decodeMe(_:Any)->Decoded<Self>
+	
 }
-public protocol Arrayable:Decodable {
+public protocol Arrayable:Decodable,Encodable {
 	static func createArray(fromData:Data)->[Self]?
+	static func createArray(fromJSON:[Any])->[Self]?
 	static func decodeMeArray(_:[Any])->Decoded<[Self]>
 }
 public extension Creatable {
 	static func create(fromData data: Data) -> Self? {
 		let j=(try? JSONSerialization.jsonObject(with: data, options: [])) ?? [String:ApiParam]()
-		
+		return create(fromJSON: j)
+	}
+	static func create(fromJSON j:Any)->Self? {
 		let ado:Decoded<Self> = Self.decodeMe(j)
 		switch ado {
 		case let .success(x): return x
@@ -249,7 +306,9 @@ public extension Arrayable {
 		let jArray=(try? JSONSerialization.jsonObject(with: data, options: [])).flatMap {
 			$0 as? [Any]
 			} ?? [Any]()
-		
+		return createArray(fromJSON:jArray)
+	}
+	static func createArray(fromJSON jArray:[Any]) -> [Self]? {
 		let ado:Decoded<[Self]> = Self.decodeMeArray(jArray)
 		switch ado {
 		case let .success(x): return x
@@ -278,6 +337,9 @@ public struct EmptyOut:Creatable {
 		return .success(EmptyOut())
 	}
 	public init(){}
+	public func encode() -> JSON {
+		return JSON.object([:])
+	}
 	
 }
 open class RestApiBase<_In,_Out> {
