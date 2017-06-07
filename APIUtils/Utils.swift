@@ -56,6 +56,12 @@ public final class PriorityObservable<Element>: Cancelable {
 	func onNext(prio:UInt,value:Element) {
 		source.onNext((prio:Int(prio),value:value))
 	}
+	func onCompleted() {
+		currentBest.onCompleted()
+	}
+	func onError(error: Error) {
+		currentBest.onError(error)
+	}
 	func asObservable() -> Observable<Element> {
 		return currentBest.filter{$0.0 > -1}.map{$0.1!}
 	}

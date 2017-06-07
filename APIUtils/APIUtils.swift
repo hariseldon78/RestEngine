@@ -168,7 +168,7 @@ public indirect enum Expiry {
 	
 	func isFresh(cachingDate:Date) -> Bool
 	{
-		return self.updatePriority(cachingDate: cachingDate)<0.05
+		return self.updatePriority(cachingDate: cachingDate)<0.025
 	}
 	func age(cachingDate:Date) -> CacheAge
 	{
@@ -484,12 +484,21 @@ public final class ArrayAPI<Result> : APICommon,CachableAPIProtocol where Result
 		let cacheAge=visitCache(allParams,output:output)
 		if rxReachability.value.online && cacheAge != .fresh {
 			let obs:Observable<[Result]>=createArrayObservableWithArrayResult(allParams,progress:progress,debugLevel: debugLevel,logTags:[Result.tag]).shareReplay(API_SHARE_REPLAY_BUFFER).subscribeOn(APIScheduler)
-			obs.subscribe(onNext: { (array:[Result]) -> Void in
-				let key=Cachable.key(allParams)
-				apiCache.set(Cachable(obj:array), forKey: key)
-				output.onNext(prio: 1, value: array)
-			}, onError: nil, onCompleted: nil, onDisposed: nil)
+			obs.subscribe(
+				onNext: { (array:[Result]) -> Void in
+					let key=Cachable.key(allParams)
+					apiCache.set(Cachable(obj:array), forKey: key)
+					output.onNext(prio: 1, value: array)
+			},
+				onError: { (e) in
+					output.onError(error: e)
+			},
+				onCompleted: {
+					output.onCompleted()
+			})
 				.addDisposableTo(globalDisposeBag)
+		} else if !rxReachability.value.online {
+			_showConnectionToast?(false)
 		}
 		return output.asObservable()
 		
@@ -537,13 +546,22 @@ public final class ObjectAPI<Result>: APICommon,CachableAPIProtocol where Result
 		let cacheAge=visitCache(allParams,output:output)
 		if rxReachability.value.online && cacheAge != .fresh {
 			let obs:Observable<Result>=createObjObservable(allParams,progress:progress, debugLevel: debugLevel,logTags:[Result.tag]).shareReplay(API_SHARE_REPLAY_BUFFER).subscribeOn(APIScheduler)
-			obs.subscribe(onNext:{ (e:Result) -> Void in
-				let key=Cachable.key(allParams)
-				apiCache.set(Cachable(obj:e), forKey: key)
-				output.onNext(prio:1,value:e)
+			obs.subscribe(
+				onNext:{ (e:Result) -> Void in
+					let key=Cachable.key(allParams)
+					apiCache.set(Cachable(obj:e), forKey: key)
+					output.onNext(prio:1,value:e)
+			},
+				onError: { (e) in
+					output.onError(error: e)
+			},
+				onCompleted: {
+					output.onCompleted()
 			}).addDisposableTo(globalDisposeBag)
+		} else if !rxReachability.value.online {
+			_showConnectionToast?(false)
 		}
-//		output.currentBest.subscribe(onNext:{print("currentBest:\($0)")})
+		//		output.currentBest.subscribe(onNext:{print("currentBest:\($0)")})
 		return output.asObservable()
 	}
 }

@@ -30,16 +30,26 @@ public let APIScheduler=OperationQueueScheduler(operationQueue: APICallsQueue)
 let globalDisposeBag=DisposeBag()
 public let globalLog=LogManager()
 public let rxReachability=Variable<Reachability.NetworkStatus>(.notReachable)
-let reachability:Reachability={
-	guard let r=Reachability(hostname:"http://municipiumapp.it") else { fatalError() }
+public let reachability:Reachability=Reachability(hostname:"http://municipiumapp.it")!
+var _showConnectionToast:((Bool)->())?
+public func initReachabilityNotifier(showConnectionToast:@escaping (Bool)->())
+{
+	_showConnectionToast=showConnectionToast
 	NotificationCenter.default.rx.notification(ReachabilityChangedNotification)
 		.subscribe(onNext:{notif in
-		guard let r=notif.object as? Reachability else {return}
-		rxReachability.value=r.currentReachabilityStatus
+		guard let reachability=notif.object as? Reachability else {return}
+		rxReachability.value=reachability.currentReachabilityStatus
 	}).addDisposableTo(globalDisposeBag)
-	try! r.startNotifier()
-	return r
-}()
+	try! reachability.startNotifier()
+	rxReachability.asObservable()
+		.skip(1)
+		.map{$0.online}
+		.distinctUntilChanged()
+		.subscribe(onNext: { (status) in
+			_showConnectionToast?(status)
+		})
+		.addDisposableTo(globalDisposeBag)
+}
 
 
 public extension Reachability.NetworkStatus {

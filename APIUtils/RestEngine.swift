@@ -24,7 +24,6 @@ public enum Cachability {
 }
 
 public class CachableCreatable<T>:CachableBase where T:Creatable {
-
 	public required init?(coder aDecoder: NSCoder) {
 		cacheDate=aDecoder.decodeObject(forKey: "date") as! Date?
 		if let s=aDecoder.decodeObject(forKey: "obj") as? String,
@@ -38,13 +37,81 @@ public class CachableCreatable<T>:CachableBase where T:Creatable {
 		}
 		return nil
 	}
+	
 	open override func encode(with aCoder: NSCoder) {
-		
+		cacheDate=timeSource.now()
+		aCoder.encode(cacheDate,forKey:"date")
+		guard let data=try? JSONSerialization.data(
+			withJSONObject: obj.encode().JSONObject(),
+			options: []),
+			let json = String(data:data,encoding: .utf8)
+			else {
+				aCoder.encode(nil,forKey:"obj")
+				return
+		}
+		aCoder.encode(json,forKey:"obj")
 	}
+	
 	open var obj:T
 	open var cacheDate:Date?
-
+	init(obj:T)
+	{
+		self.obj=obj
+		super.init()
+	}
 }
+
+public class CachableArrayable<T>:CachableBase where T:Arrayable {
+	public required init?(coder aDecoder: NSCoder) {
+		cacheDate=aDecoder.decodeObject(forKey: "date") as! Date?
+		if let data=aDecoder.decodeObject(forKey: "obj") as? [String]
+		{
+			let jsons=data.map{
+				return (try? JSONSerialization.jsonObject(
+					with: $0.data(using: .utf8)!,
+					options: [])) ?? [String:ApiParam]()
+			}
+			if let obj=T.createArray(fromJSON:jsons) {
+				self.obj=obj
+				super.init(coder: aDecoder)
+				return
+			}
+		}
+		return nil
+	}
+	
+	open override func encode(with aCoder: NSCoder) {
+		cacheDate=timeSource.now()
+		aCoder.encode(cacheDate,forKey:"date")
+		let jsons:[String]=obj
+			.map{
+				$0.encode().JSONObject()
+			}
+			.map{
+				try? JSONSerialization.data(withJSONObject: $0, options: [])
+			}
+			.filter{$0 != nil}
+			.map{$0!}
+			.map{
+				String(data:$0,encoding: .utf8)
+			}
+			.filter{$0 != nil}
+			.map{$0!}
+		
+		
+		aCoder.encode(jsons,forKey:"obj")
+	}
+	
+	open var obj:[T]
+	open var cacheDate:Date?
+	init(obj:[T])
+	{
+		self.obj=obj
+		super.init()
+	}
+}
+
+
 public let restApiCache=Cache<ApiNetworkRequest,CachableBase>(name:"restApiCache")
 public func JSONObjectWithData(fromData data: Data) -> Any? {
 	return try? JSONSerialization.jsonObject(with: data, options: [])
@@ -144,72 +211,99 @@ public extension ObjApi {
 		
 		let output=PriorityObservable<Out>()
 
+		var cacheAge:CacheAge?
 		switch self.cachability {
 		case .cache(let expiry):
 			_=0
-//			guard let old=apiCache.get(cacheKey()) as? C
+			if let old=restApiCache.get(cacheKey()) as? CachableCreatable<Out>,let date=old.cacheDate {
+				cacheAge=expiry.age(cachingDate: date)
+				if !(cacheAge == .expired && rxReachability.value.online) {
+					output.onNext(prio:0,value:old.obj)
+				}
+			}
 		case .never:
 			_=0
 		}
 		
-		return Observable.create{ (observer) -> Disposable in
-			let start=Date()
-			let actInd=UIApplication.shared.activityHandler(style: UIActivityIndicatorViewStyle.white)
-			var done=false
-			delay(0.5) {
-				if !done {
-					self.progress?.start()
+		if rxReachability.value.online && cacheAge != .fresh {
+			Observable<Out>.create{ (observer) -> Disposable in
+				let start=Date()
+				let actInd=UIApplication.shared.activityHandler(style: UIActivityIndicatorViewStyle.white)
+				var done=false
+				delay(0.5) {
+					if !done {
+						self.progress?.start()
+					}
 				}
-			}
-			let request=self.makeRequest(debugCallId:debugCallId)
-			guard let req=request.value else {
-				observer.onError(request.error!)
-				return Disposables.create()
-			}
-
-			req.responseJSON { response in
-				defer {
-					log("[\(debugCallId)]call duration: \(Date().timeIntervalSince(start))",self.logTags,.verbose)
-					actInd.hide()
-					done=true
-					self.progress?.finish()
-				}
-				guard let j = response.result.value else {
-					observer.onError(NSError(domain: "Invalid json: \(response.result.value)", code: 0, userInfo: nil))
-					return
-				}
-				log("[\(debugCallId)]Response: \(j)",self.logTags,.verbose)
-				let decoded:Decoded<Out> = Out.decodeMe(j)
-				switch decoded
-				{
-				case .success(let obj):
-					observer.onNext(obj)
-					observer.onCompleted()
-					
-				case .failure(let decodingError):
-					observer.onError(decodingError)
+				let request=self.makeRequest(debugCallId:debugCallId)
+				guard let req=request.value else {
+					observer.onError(request.error!)
+					return Disposables.create()
 				}
 				
-			}
-			return Disposables.create {
-				guard !done else {return}
-				done=true
-				actInd.hide()
-				req.cancel()
-				self.progress?.cancel()
-			}
-			}.retryWhen { (errors: Observable<NSError>) in
-				return errors.scan(0) { ( a, e) in
-					log("[\(debugCallId)]received error: \(e.localizedDescription)",self.logTags)
-					log("[\(debugCallId)]errors count: \(a+1)",self.logTags)
-					let b=a+1
-					if b >= RetryCountOnError {
-						throw e
+				req.responseJSON { response in
+					defer {
+						log("[\(debugCallId)]call duration: \(Date().timeIntervalSince(start))",self.logTags,.verbose)
+						actInd.hide()
+						done=true
+						self.progress?.finish()
 					}
-					Thread.sleep(forTimeInterval: WaitBeforeRetry)
-					return b
+					guard let j = response.result.value else {
+						observer.onError(NSError(domain: "Invalid json: \(response.result.value)", code: 0, userInfo: nil))
+						return
+					}
+					log("[\(debugCallId)]Response: \(j)",self.logTags,.verbose)
+					let decoded:Decoded<Out> = Out.decodeMe(j)
+					switch decoded
+					{
+					case .success(let obj):
+						observer.onNext(obj)
+						observer.onCompleted()
+						
+					case .failure(let decodingError):
+						observer.onError(decodingError)
+					}
+					
 				}
+				return Disposables.create {
+					guard !done else {return}
+					done=true
+					actInd.hide()
+					req.cancel()
+					self.progress?.cancel()
+				}
+				}.retryWhen { (errors: Observable<NSError>) in
+					return errors.scan(0) { ( a, e) in
+						log("[\(debugCallId)]received error: \(e.localizedDescription)",self.logTags)
+						log("[\(debugCallId)]errors count: \(a+1)",self.logTags)
+						let b=a+1
+						if b >= RetryCountOnError {
+							throw e
+						}
+						Thread.sleep(forTimeInterval: WaitBeforeRetry)
+						return b
+					}
+				}.subscribe(
+					onNext: { (obj) in
+						switch self.cachability{
+						case .cache(_):
+							restApiCache.set(CachableCreatable<Out>(obj: obj),forKey: self.cacheKey())
+						case .never:
+							_=0
+						}
+						output.onNext(prio: 1, value: obj)
+				},
+					onError: { (e) in
+						output.onError(error: e)
+				},
+					onCompleted: {
+						output.onCompleted()
+				})
+				.addDisposableTo(globalDisposeBag)
+		} else if !rxReachability.value.online {
+			_showConnectionToast?(false)
 		}
+		return output.asObservable()
 	}
 }
 public extension ArrayApi {
@@ -218,59 +312,94 @@ public extension ArrayApi {
 		let debugCallId=nextCallId
 		nextCallId+=1
 		
-		return Observable.create{ (observer) -> Disposable in
-			let start=Date()
-			let request=self.makeRequest(debugCallId:debugCallId)
-			guard let req=request.value else {
-				observer.onError(request.error!)
-				return Disposables.create()
-			}
-			
-			req.responseJSON { response in
-				defer {
-					log("[\(debugCallId)]call duration: \(Date().timeIntervalSince(start))",self.logTags,.verbose)
+		let output=PriorityObservable<[Out]>()
+		
+		var cacheAge:CacheAge?
+		switch self.cachability {
+		case .cache(let expiry):
+			_=0
+			if let old=restApiCache.get(cacheKey()) as? CachableArrayable<Out>, let date=old.cacheDate {
+				cacheAge=expiry.age(cachingDate: date)
+				if !(cacheAge == .expired && rxReachability.value.online) {
+					output.onNext(prio:0,value:old.obj)
 				}
-				log("timeline: \(response.timeline)",self.logTags,.verbose)
-				var json:[Any]!
-				switch response.result {
-				case .failure(let e):
-					observer.onError(e)
-					return
-				case .success(let j):
-					guard let jArray = j as? [Any] else {
-						observer.onError(NSError(domain: "Invalid json: \(response.result.value)", code: 0, userInfo: nil))
-						return
-					}
-					json=jArray
+			}
+		case .never:
+			_=0
+		}
+		if rxReachability.value.online && cacheAge != .fresh {
+			Observable<[Out]>.create{ (observer) -> Disposable in
+				let start=Date()
+				let request=self.makeRequest(debugCallId:debugCallId)
+				guard let req=request.value else {
+					observer.onError(request.error!)
+					return Disposables.create()
 				}
 				
-				log("[\(debugCallId)]Response \(json)",self.logTags,.verbose)
-				let decoded:Decoded<[Out]> = Out.decodeMeArray(json)
-				switch decoded
-				{
-				case .success(let array):
-					observer.onNext(array)
-					observer.onCompleted()
-					
-				case .failure(let decodingError):
-					observer.onError(decodingError)
-				}
-			}
-			return Disposables.create {
-				req.cancel()
-			}
-			}.retryWhen { (errors: Observable<NSError>) in
-				return errors.scan(0) { ( a, e) in
-					log("[\(debugCallId)]received error: \(e.localizedDescription)",self.logTags)
-					log("[\(debugCallId)]errors count: \(a+1)",self.logTags)
-					let b=a+1
-					if b >= RetryCountOnError {
-						throw e
+				req.responseJSON { response in
+					defer {
+						log("[\(debugCallId)]call duration: \(Date().timeIntervalSince(start))",self.logTags,.verbose)
 					}
-					Thread.sleep(forTimeInterval: WaitBeforeRetry)
-					return b
+					log("timeline: \(response.timeline)",self.logTags,.verbose)
+					var json:[Any]!
+					switch response.result {
+					case .failure(let e):
+						observer.onError(e)
+						return
+					case .success(let j):
+						guard let jArray = j as? [Any] else {
+							observer.onError(NSError(domain: "Invalid json: \(response.result.value)", code: 0, userInfo: nil))
+							return
+						}
+						json=jArray
+					}
+					
+					log("[\(debugCallId)]Response \(json)",self.logTags,.verbose)
+					let decoded:Decoded<[Out]> = Out.decodeMeArray(json)
+					switch decoded
+					{
+					case .success(let array):
+						observer.onNext(array)
+						observer.onCompleted()
+						
+					case .failure(let decodingError):
+						observer.onError(decodingError)
+					}
 				}
+				return Disposables.create {
+					req.cancel()
+				}
+				}.retryWhen { (errors: Observable<NSError>) in
+					return errors.scan(0) { ( a, e) in
+						log("[\(debugCallId)]received error: \(e.localizedDescription)",self.logTags)
+						log("[\(debugCallId)]errors count: \(a+1)",self.logTags)
+						let b=a+1
+						if b >= RetryCountOnError {
+							throw e
+						}
+						Thread.sleep(forTimeInterval: WaitBeforeRetry)
+						return b
+					}
+				}.subscribe(
+					onNext: { (obj) in
+						switch self.cachability{
+						case .cache(_):
+							restApiCache.set(CachableArrayable<Out>(obj: obj),forKey: self.cacheKey())
+						case .never:
+							_=0
+						}
+						output.onNext(prio: 1, value: obj)
+				},
+					onError: { (e) in
+						output.onError(error: e)
+				},
+					onCompleted: {
+						output.onCompleted()
+				}).addDisposableTo(globalDisposeBag)
+		} else if !rxReachability.value.online {
+			_showConnectionToast?(false)
 		}
+		return output.asObservable()
 	}
 }
 public protocol Creatable:Decodable,Encodable {
