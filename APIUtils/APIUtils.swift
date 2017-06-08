@@ -476,13 +476,13 @@ public final class ArrayAPI<Result> : APICommon,CachableAPIProtocol where Result
 	}
 	
 
-	public func asObservableArray(_ params:[String:ApiParam]?=nil,progress:APIProgress?=nil) -> Observable<[Result]> {
+	public func asObservableArray(_ params:[String:ApiParam]?=nil,progress:APIProgress?=nil,onlyFromCache:Bool=false) -> Observable<[Result]> {
 		var allParams=params ?? [:]
 		integrateParams(&allParams, automaticParams: Result.automaticParams)
 		checkParams(allParams, mandatoryParams: Result.mandatoryParams)
 		let output=PriorityObservable<[Result]>()
 		let cacheAge=visitCache(allParams,output:output)
-		if rxReachability.value.online && cacheAge != .fresh {
+		if rxReachability.value.online && cacheAge != .fresh && !onlyFromCache {
 			let obs:Observable<[Result]>=createArrayObservableWithArrayResult(allParams,progress:progress,debugLevel: debugLevel,logTags:[Result.tag]).shareReplay(API_SHARE_REPLAY_BUFFER).subscribeOn(APIScheduler)
 			obs.subscribe(
 				onNext: { (array:[Result]) -> Void in
@@ -538,13 +538,13 @@ public final class ObjectAPI<Result>: APICommon,CachableAPIProtocol where Result
 		}
 		return nil
 	}
-	public func asObservable(_ params:[String:ApiParam]?=nil,progress:APIProgress?=nil) -> Observable<Result> {
+	public func asObservable(_ params:[String:ApiParam]?=nil,progress:APIProgress?=nil,onlyFromCache:Bool=false) -> Observable<Result> {
 		var allParams=params ?? [:]
 		integrateParams(&allParams, automaticParams: Result.automaticParams)
 		checkParams(allParams, mandatoryParams: Result.mandatoryParams)
 		let output=PriorityObservable<Result>()
 		let cacheAge=visitCache(allParams,output:output)
-		if rxReachability.value.online && cacheAge != .fresh {
+		if rxReachability.value.online && cacheAge != .fresh && !onlyFromCache {
 			let obs:Observable<Result>=createObjObservable(allParams,progress:progress, debugLevel: debugLevel,logTags:[Result.tag]).shareReplay(API_SHARE_REPLAY_BUFFER).subscribeOn(APIScheduler)
 			obs.subscribe(
 				onNext:{ (e:Result) -> Void in

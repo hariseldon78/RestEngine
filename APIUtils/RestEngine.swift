@@ -131,6 +131,7 @@ public protocol RestApi:Tagged {
 	var encoding:Alamofire.ParameterEncoding {get}
 	var flags:Set<RestApiFlags> {get}
 	var cachability:Cachability {get}
+	func preload()
 }
 
 public extension RestApi {
@@ -203,7 +204,11 @@ extension RestApi {
 	}
 }
 public extension ObjApi {
-	
+	func preload(){
+		if rxReachability.value.online {
+			rxObject().subscribe().addDisposableTo(globalDisposeBag)
+		}
+	}
 	func rxObject()->Observable<Out>
 	{
 		let debugCallId=nextCallId
@@ -307,6 +312,11 @@ public extension ObjApi {
 	}
 }
 public extension ArrayApi {
+	func preload(){
+		if rxReachability.value.online {
+			rxArray().subscribe().addDisposableTo(globalDisposeBag)
+		}
+	}
 	func rxArray()->Observable<[Out]>
 	{
 		let debugCallId=nextCallId
