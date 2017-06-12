@@ -184,21 +184,23 @@ public class APIProgress:ProgressController{
 	public func start()
 	{
 		startTime=Date()
-		switch type {
-		case .indeterminate(let pbl):
-			switch pbl {
-			case .inNavBar(let vc):
-				let navCon=vc.navigationController
-				navCon?.showProgress()
-				navCon?.setIndeterminate(true)
-			case .inProgressBar(let pb):
-				pb.show()
-				pb.setIsIndeterminate(true)
+		DispatchQueue.main.async {
+			switch self.type {
+			case .indeterminate(let pbl):
+				switch pbl {
+				case .inNavBar(let vc):
+					let navCon=vc.navigationController
+					navCon?.showProgress()
+					navCon?.setIndeterminate(true)
+				case .inProgressBar(let pb):
+					pb.show()
+					pb.setIsIndeterminate(true)
+				}
+			case .determinate(let step):
+				step.start()
+			case .none:
+				_=0
 			}
-		case .determinate(let step):
-			step.start()
-		case .none:
-			_=0
 		}
 	}
 	public func setIndeterminate() {
