@@ -80,3 +80,13 @@ public final class PriorityObservable<Element>: Cancelable {
 	}
 }
 
+extension ObservableType {
+	public func delay(time: TimeInterval, scheduler: SchedulerType = MainScheduler.instance) -> Observable<E> {
+		return self.flatMap { element in
+			Observable<Int>.timer(time, scheduler: scheduler)
+				.map { _ in
+					return element
+			}
+		}
+	}
+}

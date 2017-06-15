@@ -29,42 +29,8 @@ public var simulateNoConnection=false
 public let APIScheduler=OperationQueueScheduler(operationQueue: APICallsQueue)
 let globalDisposeBag=DisposeBag()
 public let globalLog=LogManager()
-#if arch(i386) || arch(x86_64)
-public let rxReachability=Variable<Reachability.NetworkStatus>(.reachableViaWiFi)
-#else
-public let rxReachability=Variable<Reachability.NetworkStatus>(.notReachable)
-#endif
-public let reachability:Reachability=Reachability(hostname:"http://municipiumapp.it")!
-var _showConnectionToast:((Bool)->())?
-public func initReachabilityNotifier(showConnectionToast:@escaping (Bool)->())
-{
-	_showConnectionToast=showConnectionToast
-	reachability.reachableOnWWAN=true
-	NotificationCenter.default.rx.notification(ReachabilityChangedNotification)
-		.subscribe(onNext:{notif in
-			guard let reachability=notif.object as? Reachability else {return}
-			let status=reachability.currentReachabilityStatus
-			print("status:\(status)")
-			#if !arch(i386) && !arch(x86_64)
-			rxReachability.value=reachability.currentReachabilityStatus
-			#endif
-		}).addDisposableTo(globalDisposeBag)
-	try! reachability.startNotifier()
-	rxReachability.asObservable()
-		.skip(1)
-		.map{$0.online}
-		.distinctUntilChanged()
-		.subscribe(onNext: { (status) in
-			_showConnectionToast?(status)
-		})
-		.addDisposableTo(globalDisposeBag)
-}
 
-
-public extension Reachability.NetworkStatus {
-	public var online:Bool { return self != .notReachable }
-}
-
+public var connectionMonitor=ReachabilityNotifier()
 public func log(_ message:String,_ tags:[String]) {
 	globalLog.log(message,tags)
 }

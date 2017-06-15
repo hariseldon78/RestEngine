@@ -205,7 +205,7 @@ extension RestApi {
 }
 public extension ObjApi {
 	func preload(){
-		if rxReachability.value.online {
+		if connectionMonitor.rxOnline.value.isOnline {
 			rxObject().subscribe().addDisposableTo(globalDisposeBag)
 		}
 	}
@@ -222,7 +222,7 @@ public extension ObjApi {
 			_=0
 			if let old=restApiCache.get(cacheKey()) as? CachableCreatable<Out>,let date=old.cacheDate {
 				cacheAge=expiry.age(cachingDate: date)
-				if !(cacheAge == .expired && rxReachability.value.online) {
+				if !(cacheAge == .expired && connectionMonitor.rxOnline.value.isOnline) {
 					output.onNext(prio:0,value:old.obj)
 				}
 			}
@@ -230,7 +230,7 @@ public extension ObjApi {
 			_=0
 		}
 		
-		if rxReachability.value.online && cacheAge != .fresh {
+		if connectionMonitor.rxOnline.value.isOnline && cacheAge != .fresh {
 			Observable<Out>.create{ (observer) -> Disposable in
 				let start=Date()
 				let actInd=UIApplication.shared.activityHandler(style: UIActivityIndicatorViewStyle.white)
@@ -254,7 +254,7 @@ public extension ObjApi {
 						self.progress?.finish()
 					}
 					guard let j = response.result.value else {
-						observer.onError(NSError(domain: "Invalid json: \(response.result.value)", code: 0, userInfo: nil))
+						observer.onError(NSError(domain: "Invalid json: \(String(describing: response.result.value))", code: 0, userInfo: nil))
 						return
 					}
 					log("[\(debugCallId)]Response: \(j)",self.logTags,.verbose)
@@ -305,15 +305,15 @@ public extension ObjApi {
 						output.onCompleted()
 				})
 				.addDisposableTo(globalDisposeBag)
-		} else if !rxReachability.value.online {
-			_showConnectionToast?(false)
+		} else if !connectionMonitor.rxOnline.value.isOnline {
+			connectionMonitor.showConnectionToast?(.offline)
 		}
 		return output.asObservable()
 	}
 }
 public extension ArrayApi {
 	func preload(){
-		if rxReachability.value.online {
+		if connectionMonitor.rxOnline.value.isOnline {
 			rxArray().subscribe().addDisposableTo(globalDisposeBag)
 		}
 	}
@@ -330,14 +330,14 @@ public extension ArrayApi {
 			_=0
 			if let old=restApiCache.get(cacheKey()) as? CachableArrayable<Out>, let date=old.cacheDate {
 				cacheAge=expiry.age(cachingDate: date)
-				if !(cacheAge == .expired && rxReachability.value.online) {
+				if !(cacheAge == .expired && connectionMonitor.rxOnline.value.isOnline) {
 					output.onNext(prio:0,value:old.obj)
 				}
 			}
 		case .never:
 			_=0
 		}
-		if rxReachability.value.online && cacheAge != .fresh {
+		if connectionMonitor.rxOnline.value.isOnline && cacheAge != .fresh {
 			Observable<[Out]>.create{ (observer) -> Disposable in
 				let start=Date()
 				let request=self.makeRequest(debugCallId:debugCallId)
@@ -358,7 +358,7 @@ public extension ArrayApi {
 						return
 					case .success(let j):
 						guard let jArray = j as? [Any] else {
-							observer.onError(NSError(domain: "Invalid json: \(response.result.value)", code: 0, userInfo: nil))
+							observer.onError(NSError(domain: "Invalid json: \(String(describing: response.result.value))", code: 0, userInfo: nil))
 							return
 						}
 						json=jArray
@@ -406,8 +406,8 @@ public extension ArrayApi {
 					onCompleted: {
 						output.onCompleted()
 				}).addDisposableTo(globalDisposeBag)
-		} else if !rxReachability.value.online {
-			_showConnectionToast?(false)
+		} else if !connectionMonitor.rxOnline.value.isOnline {
+			connectionMonitor.showConnectionToast?(.offline)
 		}
 		return output.asObservable()
 	}

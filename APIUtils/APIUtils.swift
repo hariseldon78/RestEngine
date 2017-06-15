@@ -493,7 +493,7 @@ public final class ArrayAPI<Result> : APICommon,CachableAPIProtocol where Result
 		
 		if let (cached,age)=getCache(params) {
 			log("found \(Cachable.key(params)). It's \(age.rawValue)",[Result.tag,"api"],debugLevel)
-			if !(age == .expired && rxReachability.value.online) {
+			if !(age == .expired && connectionMonitor.rxOnline.value.isOnline) {
 				output.onNext(prio:0,value:cached)
 			}
 			return age
@@ -508,9 +508,9 @@ public final class ArrayAPI<Result> : APICommon,CachableAPIProtocol where Result
 		let output=PriorityObservable<[Result]>()
 		let cacheAge=visitCache(allParams,output:output)
 		if cacheAge != .fresh && !onlyFromCache {
-			rxReachability.asObservable().startWith(rxReachability.value).subscribe(onNext:{
-				guard $0.online else {
-					_showConnectionToast?(false)
+			connectionMonitor.rxOnline.asObservable().startWith(connectionMonitor.rxOnline.value).subscribe(onNext:{
+				guard $0.isOnline else {
+					connectionMonitor.showConnectionToast?(.offline)
 					progress?.cancel()
 					return
 				}
@@ -574,7 +574,7 @@ public final class ObjectAPI<Result>: APICommon,CachableAPIProtocol where Result
 	{
 		if let (cached,age)=getCache(params) {
 			log("found \(Cachable.key(params)). It's \(age.rawValue)",[Result.tag,"api"],debugLevel)
-			if !(age == .expired && rxReachability.value.online) {
+			if !(age == .expired && connectionMonitor.rxOnline.value.isOnline) {
 				output.onNext(prio:0,value:cached)
 			}
 			return age
@@ -588,9 +588,9 @@ public final class ObjectAPI<Result>: APICommon,CachableAPIProtocol where Result
 		let output=PriorityObservable<Result>()
 		let cacheAge=visitCache(allParams,output:output)
 		if cacheAge != .fresh && !onlyFromCache {
-			rxReachability.asObservable().startWith(rxReachability.value).subscribe(onNext:{
-				guard $0.online else {
-					_showConnectionToast?(false)
+			connectionMonitor.rxOnline.asObservable().startWith(connectionMonitor.rxOnline.value).subscribe(onNext:{
+				guard $0.isOnline else {
+					connectionMonitor.showConnectionToast?(.offline)
 					progress?.cancel()
 					return
 				}
