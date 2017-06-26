@@ -27,6 +27,8 @@ public class ReachabilityNotifier {
 	public let reachability:Reachability=Reachability(hostname:"http://google.com")!
 	public var showConnectionToast:((ConnectionStatus)->(Bool))?
 	let 🗑=DisposeBag()
+	var	networkActivityLock=NSRecursiveLock()
+	var networkActivityCounter=0
 	public init(showConnectionToast: ((ConnectionStatus)->(Bool))?=nil)
 	{
 		self.showConnectionToast=showConnectionToast
@@ -86,6 +88,26 @@ public class ReachabilityNotifier {
 			})
 			.subscribe(onNext: showStatus)
 			.addDisposableTo(🗑)
+		
+		/*
+notificationCenter.addObserver(
+self,
+selector: #selector(NetworkActivityIndicatorManager.networkRequestDidStart),
+name: Notification.Name.Task.DidResume,
+object: nil
+)*/
+		NotificationCenter.default.rx.notification(Notification.Name.Task.DidResume).subscribe(onNext:{_ in
+			print("==================== NETWORK ACTIVITY DETECTED =========================")
+			self.networkActivityLock.lock()
+			defer {self.networkActivityLock.unlock()}
+			self.networkActivityCounter+=1
+		}).addDisposableTo(🗑)
+		NotificationCenter.default.rx.notification(Notification.Name.Task.DidComplete).subscribe(onNext:{_ in
+			print("==================== NETWORK ACTIVITY COMPLETED ########################")
+			self.networkActivityLock.lock()
+			defer {self.networkActivityLock.unlock()}
+			self.networkActivityCounter-=1
+		}).addDisposableTo(🗑)
 	}
 	// impedisco che mostri il toast all'inizio
 	var lastStatusShown:ConnectionStatus = .online
@@ -100,16 +122,42 @@ public class ReachabilityNotifier {
 	func httping(url:URL)->Observable<ConnectionStatus>
 	{
 		return Observable.create({ (observer) -> Disposable in
+			self.networkActivityLock.lock()
+			guard self.networkActivityCounter==0 else  {
+				observer.onNext(.online)
+				observer.onCompleted()
+				self.networkActivityLock.unlock()
+				return Disposables.create()
+			}
+			self.networkActivityLock.unlock()
 			let config=URLSessionConfiguration.default
-			config.timeoutIntervalForRequest=10
-			config.timeoutIntervalForResource=10
+			config.timeoutIntervalForRequest=3
+			config.timeoutIntervalForResource=3
 			config.requestCachePolicy = .reloadIgnoringCacheData
 			log("trying to contact google",["online"])
 			URLSession(configuration:config).dataTask(with:url,completionHandler:{(data,response,error) in
 				log("done: \(String(describing: response)), \(String(describing: error))",["online"])
 				observer.onNext(error==nil ? .online : .offline)
+				observer.onCompleted()
 			}).resume()
 			return Disposables.create()
 		})
 	}
 }
+
+//extension Notification.Name {
+//	/// Used as a namespace for all `URLSessionTask` related notifications.
+//	public struct Task {
+//		/// Posted when a `URLSessionTask` is resumed. The notification `object` contains the resumed `URLSessionTask`.
+//		public static let DidResume = Notification.Name(rawValue: "org.alamofire.notification.name.task.didResume")
+//		
+//		/// Posted when a `URLSessionTask` is suspended. The notification `object` contains the suspended `URLSessionTask`.
+//		public static let DidSuspend = Notification.Name(rawValue: "org.alamofire.notification.name.task.didSuspend")
+//		
+//		/// Posted when a `URLSessionTask` is cancelled. The notification `object` contains the cancelled `URLSessionTask`.
+//		public static let DidCancel = Notification.Name(rawValue: "org.alamofire.notification.name.task.didCancel")
+//		
+//		/// Posted when a `URLSessionTask` is completed. The notification `object` contains the completed `URLSessionTask`.
+//		public static let DidComplete = Notification.Name(rawValue: "org.alamofire.notification.name.task.didComplete")
+//	}
+//}
