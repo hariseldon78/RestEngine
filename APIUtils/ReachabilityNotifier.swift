@@ -101,8 +101,8 @@ public class ReachabilityNotifier {
 	{
 		return Observable.create({ (observer) -> Disposable in
 			let config=URLSessionConfiguration.default
-			config.timeoutIntervalForRequest=0.5
-			config.timeoutIntervalForResource=0.5
+			config.timeoutIntervalForRequest=10
+			config.timeoutIntervalForResource=10
 			config.requestCachePolicy = .reloadIgnoringCacheData
 			log("trying to contact google",["online"])
 			URLSession(configuration:config).dataTask(with:url,completionHandler:{(data,response,error) in
