@@ -131,13 +131,13 @@ var timeSource:TimeSource=DefaultTimeSource.instance
 
 
 extension Date {
-	func nextWithTime(hour:Int,minute:Int,second:Int) throws ->Date
+	func nextWithTime(hour:Int,minute:Int,second:Int) ->Date
 	{
-		let d=try self.atTime(hour: hour, minute: minute, second: second)
+		let d=self.atTime(hour: hour, minute: minute, second: second)!
 		if d>self {
 			return d
 		} else {
-			return try self.startOfDay.add(components: [.day:1]).atTime(hour: hour, minute: minute, second: second)
+			return self.startOfDay.add(components: [.day:1]).atTime(hour: hour, minute: minute, second: second)!
 		}
 	}
 }

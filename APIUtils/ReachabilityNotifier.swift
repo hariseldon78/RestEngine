@@ -8,7 +8,7 @@
 
 import Foundation
 import RxSwift
-import Reachability
+import ReachabilitySwift
 
 public enum ConnectionStatus:String{
 	case online

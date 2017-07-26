@@ -17,7 +17,6 @@
 		FB30F1FA1EEED958006C4730 /* ObjectMapper.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FB30F1F01EEED958006C4730 /* ObjectMapper.framework */; };
 		FB30F1FB1EEED958006C4730 /* Ogra.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FB30F1F11EEED958006C4730 /* Ogra.framework */; };
 		FB30F1FC1EEED958006C4730 /* PINCache.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FB30F1F21EEED958006C4730 /* PINCache.framework */; };
-		FB30F1FD1EEED958006C4730 /* Reachability.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FB30F1F31EEED958006C4730 /* Reachability.framework */; };
 		FB30F1FE1EEED958006C4730 /* Runes.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FB30F1F41EEED958006C4730 /* Runes.framework */; };
 		FB30F2001EEED983006C4730 /* RxSwift.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FB30F1FF1EEED983006C4730 /* RxSwift.framework */; };
 		FB30F2021EEED988006C4730 /* Pods_Municipium.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FB30F2011EEED988006C4730 /* Pods_Municipium.framework */; };
@@ -117,7 +116,6 @@
 				FB30F1FA1EEED958006C4730 /* ObjectMapper.framework in Frameworks */,
 				FB30F1FB1EEED958006C4730 /* Ogra.framework in Frameworks */,
 				FB30F1FC1EEED958006C4730 /* PINCache.framework in Frameworks */,
-				FB30F1FD1EEED958006C4730 /* Reachability.framework in Frameworks */,
 				FB30F1FE1EEED958006C4730 /* Runes.framework in Frameworks */,
 				FB30F1EA1EEED8EC006C4730 /* DataVisualization.framework in Frameworks */,
 			);

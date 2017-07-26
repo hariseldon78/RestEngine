@@ -15,7 +15,7 @@ import AlamofireObjectMapper
 import Cartography
 import DataVisualization
 import M13ProgressSuite
-import Reachability
+import ReachabilitySwift
 
 let RetryCountOnError=3
 let WaitBeforeRetry=0.3
